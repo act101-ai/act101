@@ -44,8 +44,12 @@ function readPluginVersion() {
 
 function detectTarget() {
     const { platform, arch } = process;
+    // Linux: prefer musl (statically linked, no glibc version requirement)
+    // over gnu, which links against the builder's glibc and breaks on
+    // older hosts. We only ship musl for x86_64; aarch64 uses gnu until
+    // we add a musl aarch64 build.
     const map = {
-        'linux:x64':   'x86_64-unknown-linux-gnu',
+        'linux:x64':   'x86_64-unknown-linux-musl',
         'linux:arm64': 'aarch64-unknown-linux-gnu',
         'darwin:x64':  'x86_64-apple-darwin',
         'darwin:arm64':'aarch64-apple-darwin',
