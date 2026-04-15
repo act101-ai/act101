@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "act": {
+      "command": "node",
+      "args": ["${CLAUDE_PLUGIN_ROOT}/bin/act.js", "mcp", "serve"],
+      "env": {
+        "ACT_LOG_LEVEL": "warn"
+      }
+    }
+  }
+}

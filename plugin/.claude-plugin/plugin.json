@@ -1,0 +1,61 @@
+{
+  "name": "act",
+  "version": "0.7.15",
+  "description": "AST-aware code transformer for AI agents. 17 MCP tools for code analysis and refactoring across 100+ languages with undo/redo, preview mode, and intelligent guardrails.",
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/bin/act.js\" --ensure"
+          }
+        ]
+      }
+    ]
+  },
+  "author": {
+    "name": "Kage Martin",
+    "url": "https://github.com/act101-ai"
+  },
+  "homepage": "https://act101.ai",
+  "repository": "https://github.com/act101-ai/act",
+  "license": "Commercial",
+  "keywords": [
+    "refactoring",
+    "code-transformation",
+    "ast",
+    "code-analysis",
+    "code-generation",
+    "typescript",
+    "rust",
+    "go",
+    "python",
+    "multi-language",
+    "mcp",
+    "dart",
+    "bash",
+    "groovy",
+    "perl",
+    "lua",
+    "objective-c",
+    "vbnet",
+    "vb.net",
+    "julia",
+    "ocaml",
+    "r",
+    "cuda",
+    "solidity",
+    "pascal",
+    "common-lisp",
+    "lisp",
+    "powershell",
+    "cobol",
+    "v",
+    "vlang",
+    "json",
+    "css",
+    "svelte"
+  ]
+}
