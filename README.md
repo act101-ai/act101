@@ -36,7 +36,9 @@ Non-interactive flags (pass after `sh -s --`):
   registration. Default is `ask` in interactive shells, `no` otherwise.
 - `--prefix=<dir>` — install prefix (defaults to `/usr/local/bin` as
   root, `~/.local/bin` otherwise).
-- `--version=v0.7.18` — pin a specific release.
+- `--version=v0.7.19` — pin a specific release.
+- `--dry-run` — print what would happen without making any changes.
+- `--debug` — verbose trace output (enables `set -x`).
 
 Uninstall:
 
