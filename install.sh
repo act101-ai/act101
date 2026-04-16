@@ -228,6 +228,30 @@ run_cmd() {
     "$@"
 }
 
+# Register the act101 plugin with Claude Code.
+# Runs `marketplace add → marketplace update → plugin install`. The `update`
+# step works around a pre-2.1.70 Claude Code race where `plugin install`
+# immediately after `marketplace add` can fail with "Plugin not found in
+# marketplace" before the marketplace listing is refreshed.
+register_claude_plugin() {
+    if ! command -v claude >/dev/null 2>&1; then
+        echo "  Claude Code CLI not on PATH; skipping plugin registration."
+        return 1
+    fi
+    if ! run_cmd claude plugin marketplace add act101-ai/act101; then
+        echo "  'claude plugin marketplace add' failed; skipping registration."
+        return 1
+    fi
+    run_cmd claude plugin marketplace update act101-marketplace || true
+    if ! run_cmd claude plugin install act101@act101-marketplace; then
+        echo "  'claude plugin install' failed. Try manually:"
+        echo "    claude plugin marketplace update act101-marketplace"
+        echo "    claude plugin install act101@act101-marketplace"
+        return 1
+    fi
+    return 0
+}
+
 # ---------------------------------------------------------------------------
 # Library hook — allow bats to source this file without executing main.
 # ---------------------------------------------------------------------------
@@ -454,12 +478,8 @@ for host in $DETECTED; do
             echo "  Detected Claude Code"
             case "$CLAUDE_PLUGIN" in
                 yes)
-                    if [ -n "${DRY_RUN:-}" ]; then
-                        echo "  Would run: $ACT_BIN install claude-code"
-                        act_step "REGISTER" "Claude Code ✓ (dry-run)"
-                    else
-                        run_cmd "$ACT_BIN" install claude-code 2>/dev/null || true
-                        act_step "REGISTER" "Claude Code ✓"
+                    if register_claude_plugin; then
+                        act_step "REGISTER" "Claude Code ✓${DRY_RUN:+ (dry-run)}"
                     fi
                     ;;
                 no) : ;;
@@ -471,18 +491,16 @@ for host in $DETECTED; do
                         reply=$(to_lower "$reply")
                         case "$reply" in
                             ""|y|yes)
-                                if [ -n "${DRY_RUN:-}" ]; then
-                                    echo "  Would run: $ACT_BIN install claude-code"
-                                    act_step "REGISTER" "Claude Code ✓ (dry-run)"
-                                else
-                                    run_cmd "$ACT_BIN" install claude-code 2>/dev/null || true
-                                    act_step "REGISTER" "Claude Code ✓"
+                                if register_claude_plugin; then
+                                    act_step "REGISTER" "Claude Code ✓${DRY_RUN:+ (dry-run)}"
                                 fi
                                 ;;
                             *) echo "  Skipped." ;;
                         esac
                     else
-                        echo "  Register: run '$ACT_BIN install claude-code'"
+                        echo "  Register later: claude plugin marketplace add act101-ai/act101"
+                        echo "                  claude plugin marketplace update act101-marketplace"
+                        echo "                  claude plugin install act101@act101-marketplace"
                     fi
                     ;;
             esac
