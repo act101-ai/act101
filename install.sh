@@ -167,13 +167,18 @@ act_banner() {
 
 act_finale() {
     version="$1" tools="$2" langs="$3"
+    # Inner box width (between the two `│` characters) — the top/bottom border
+    # uses 46 box-drawing dashes, so every content line must total 46 columns.
+    inner=46
+    line_b="  act v${version} · ${tools} tools · ${langs}+ languages"
+    pad_b=$(printf '%*s' $((inner - ${#line_b})) '')
     printf "\n"
     printf "  %s┌──────────────────────────────────────────────┐%s\n" "$ORANGE" "$RESET"
     printf "  %s│%s  %sanalyze%s %s·%s %scode%s %s·%s %stransform%s                  %s│%s\n" \
         "$ORANGE" "$RESET" "$WHITE" "$RESET" "$GRAY" "$RESET" "$WHITE" "$RESET" "$GRAY" "$RESET" "$WHITE" "$RESET" "$ORANGE" "$RESET"
     printf "  %s│%s                                              %s│%s\n" "$ORANGE" "$RESET" "$ORANGE" "$RESET"
-    printf "  %s│%s  act v%s · %s tools · %s+ languages    %s│%s\n" \
-        "$ORANGE" "$RESET" "$version" "$tools" "$langs" "$ORANGE" "$RESET"
+    printf "  %s│%s  act v%s · %s tools · %s+ languages%s%s│%s\n" \
+        "$ORANGE" "$RESET" "$version" "$tools" "$langs" "$pad_b" "$ORANGE" "$RESET"
     printf "  %s│%s                                              %s│%s\n" "$ORANGE" "$RESET" "$ORANGE" "$RESET"
     printf "  %s│%s  Ask your agent, or run: act --help          %s│%s\n" "$ORANGE" "$RESET" "$ORANGE" "$RESET"
     printf "  %s└──────────────────────────────────────────────┘%s\n\n" "$ORANGE" "$RESET"
@@ -181,10 +186,15 @@ act_finale() {
 
 detect_hosts() {
     hosts=""
-    if command -v claude >/dev/null 2>&1; then
+    home="${HOME:-}"
+    # Claude Code: CLI on PATH, ~/.claude config dir, or the macOS app bundle.
+    # The CLI isn't always installed (e.g. desktop-only setups), so falling
+    # back to the config dir / app bundle keeps detection reliable.
+    if command -v claude >/dev/null 2>&1 \
+        || [ -d "$home/.claude" ] \
+        || [ -d "/Applications/Claude.app" ]; then
         hosts="${hosts} claude-code"
     fi
-    home="${HOME:-}"
     [ -d "$home/.cursor" ] && hosts="${hosts} cursor"
     [ -d "$home/.windsurf" ] && hosts="${hosts} windsurf"
     if [ -d "${XDG_CONFIG_HOME:-$home/.config}/zed" ] || [ -d "$home/Library/Application Support/Zed" ]; then
@@ -441,6 +451,7 @@ DETECTED=$(detect_hosts)
 for host in $DETECTED; do
     case "$host" in
         claude-code)
+            echo "  Detected Claude Code"
             case "$CLAUDE_PLUGIN" in
                 yes)
                     if [ -n "${DRY_RUN:-}" ]; then
@@ -470,6 +481,8 @@ for host in $DETECTED; do
                                 ;;
                             *) echo "  Skipped." ;;
                         esac
+                    else
+                        echo "  Register: run '$ACT_BIN install claude-code'"
                     fi
                     ;;
             esac
