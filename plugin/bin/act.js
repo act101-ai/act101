@@ -121,12 +121,38 @@ function extractArchive(archivePath, destDir) {
     }
 }
 
+function probePathBinary(expectedVersion) {
+    // Look for an `act` already on PATH — the shell installer places one
+    // there. If its --version matches the plugin manifest, reuse it.
+    const name = binaryName();
+    const probe = spawnSync(process.platform === 'win32' ? 'where' : 'which', [name], {
+        encoding: 'utf8',
+    });
+    if (probe.status !== 0 || !probe.stdout) return null;
+    const candidate = probe.stdout.split(/\r?\n/).map((s) => s.trim()).find(Boolean);
+    if (!candidate || !fs.existsSync(candidate)) return null;
+
+    const v = spawnSync(candidate, ['--version'], { encoding: 'utf8' });
+    if (v.status !== 0) return null;
+    const match = /(\d+\.\d+\.\d+)/.exec(v.stdout || '');
+    if (!match) return null;
+    if (match[1] !== expectedVersion) {
+        log(`ignoring ${candidate} (version ${match[1]} != plugin ${expectedVersion})`);
+        return null;
+    }
+    log(`using PATH binary: ${candidate}`);
+    return candidate;
+}
+
 async function ensureBinary() {
     const version = readPluginVersion();
     const target = detectTarget();
     const bin = binaryPath(version, target);
 
     if (fs.existsSync(bin)) return bin;
+
+    const onPath = probePathBinary(version);
+    if (onPath) return onPath;
 
     const url = downloadUrl(version, target);
     const destDir = path.dirname(bin);

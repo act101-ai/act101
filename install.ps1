@@ -11,6 +11,8 @@ param(
     [string]$EnableDaemon = "",
     [ValidateSet("yes","no","ask","")]
     [string]$AutoStart = "",
+    [ValidateSet("yes","no","ask","")]
+    [string]$InstallClaudePlugin = "",
     [string]$Prefix = "",
     [string]$Version = "",
     [switch]$Uninstall
@@ -18,8 +20,71 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+# --- Colors (respect $env:NO_COLOR) ---
+$UseColor = -not $env:NO_COLOR -and [Environment]::UserInteractive
+function Write-Orange([string]$text) { if ($UseColor) { Write-Host $text -ForegroundColor DarkYellow -NoNewline } else { Write-Host $text -NoNewline } }
+function Write-Gray([string]$text) { if ($UseColor) { Write-Host $text -ForegroundColor DarkGray -NoNewline } else { Write-Host $text -NoNewline } }
+function Write-Wht([string]$text) { if ($UseColor) { Write-Host $text -ForegroundColor White -NoNewline } else { Write-Host $text -NoNewline } }
+
+$TripletSets = @{
+    DOWNLOAD = @("arduously:collecting:things","anxiously:counting:tokens","acquiring:compressed:tarball","another:cool:tool")
+    VERIFY = @("absolutely:checking:that","assessing:cryptographic:truth","anxiously:confirming:things","authenticating:content:trustworthiness")
+    INSTALL = @("assembling:cool:tools","actually:configuring:things","aggressively:claiming:territory","adding:capabilities:though")
+    TOS = @("attorneys:crafted:this","acknowledging:conditions:transparently","anxiously:consenting:though","accepting:conditions:thoughtfully")
+    REGISTER = @("attaching:claude:tools","augmenting:coding:talent","agents:cooperating:today","anxiously:connecting:things")
+}
+
+function Get-RandomTriplet([string]$phase) {
+    $set = $TripletSets[$phase]
+    $triplet = $set | Get-Random
+    return $triplet -split ':'
+}
+
+function Write-ActStep([string]$phase, [string]$result) {
+    if (-not [Environment]::UserInteractive) {
+        Write-Host "  $phase  $result"
+        return
+    }
+    $parts = Get-RandomTriplet $phase
+    Write-Host "  " -NoNewline
+    Write-Wht $parts[0]; Write-Gray " · "; Write-Wht $parts[1]; Write-Gray " · "; Write-Wht $parts[2]
+    Write-Gray "       $result"
+    Write-Host ""
+}
+
+function Write-ActBanner {
+    Write-Host ""
+    Write-Host "  " -NoNewline; Write-Orange "act101"; Write-Host ""
+    Write-Host ""
+}
+
+function Write-ActFinale([string]$ver, [string]$tools, [string]$langs) {
+    Write-Host ""
+    Write-Orange "  ┌──────────────────────────────────────────────┐"; Write-Host ""
+    Write-Orange "  │"; Write-Wht "  analyze"; Write-Gray " · "; Write-Wht "code"; Write-Gray " · "; Write-Wht "transform";
+    Write-Host "                  " -NoNewline; Write-Orange "│"; Write-Host ""
+    Write-Orange "  │                                              │"; Write-Host ""
+    Write-Orange "  │"; Write-Host "  act v$ver · $tools tools · ${langs}+ languages    " -NoNewline; Write-Orange "│"; Write-Host ""
+    Write-Orange "  │                                              │"; Write-Host ""
+    Write-Orange "  │"; Write-Host "  Ask your agent, or run: act --help          " -NoNewline; Write-Orange "│"; Write-Host ""
+    Write-Orange "  └──────────────────────────────────────────────┘"; Write-Host ""
+    Write-Host ""
+}
+
+function Find-Hosts {
+    $hosts = @()
+    if (Get-Command claude -ErrorAction SilentlyContinue) { $hosts += "claude-code" }
+    $home = $env:USERPROFILE
+    if (Test-Path "$home\.cursor") { $hosts += "cursor" }
+    if (Test-Path "$home\.windsurf") { $hosts += "windsurf" }
+    if ((Test-Path "$env:APPDATA\zed") -or (Test-Path "$env:APPDATA\Zed")) { $hosts += "zed" }
+    if (Get-Command codex -ErrorAction SilentlyContinue) { $hosts += "codex" }
+    if (Test-Path "$home\.continue") { $hosts += "continue" }
+    return $hosts
+}
+
 # ACT_DEFAULT_VERSION is substituted at release time
-$DefaultVersion = if ($env:ACT_VERSION) { $env:ACT_VERSION } else { "v0.7.18" }
+$DefaultVersion = if ($env:ACT_VERSION) { $env:ACT_VERSION } else { "v0.7.19" }
 $Repo = if ($env:ACT_GITHUB_REPO) { $env:ACT_GITHUB_REPO } else { "act101-ai/act101" }
 
 function Resolve-Tristate([string]$v, [string]$default = "ask") {
@@ -48,6 +113,7 @@ function Select-Target([string]$arch) {
 $Tos = Resolve-Tristate $AcceptTermsOfService (if ($env:ACT_ACCEPT_TOS) { $env:ACT_ACCEPT_TOS } else { "ask" })
 $Daemon = Resolve-Tristate $EnableDaemon (if ($env:ACT_ENABLE_DAEMON) { $env:ACT_ENABLE_DAEMON } else { "ask" })
 $AutoS = Resolve-Tristate $AutoStart (if ($env:ACT_AUTO_START) { $env:ACT_AUTO_START } else { "ask" })
+$ClaudePlugin = Resolve-Tristate $InstallClaudePlugin (if ($env:ACT_INSTALL_CLAUDE_PLUGIN) { $env:ACT_INSTALL_CLAUDE_PLUGIN } else { "ask" })
 
 if (-not $Prefix) {
     if ($env:ACT_PREFIX) { $Prefix = $env:ACT_PREFIX }
@@ -76,7 +142,7 @@ if ($Version -eq "latest") {
 }
 $VerNoV = $Version.TrimStart('v')
 
-Write-Host "==> act $Version for $Target"
+Write-ActBanner
 
 # Download + verify
 $Tmp = Join-Path $env:TEMP "act-install-$(Get-Random)"
@@ -86,6 +152,7 @@ $Base = "https://github.com/$Repo/releases/download/$Version"
 
 Invoke-WebRequest -Uri "$Base/$Asset" -OutFile (Join-Path $Tmp $Asset)
 Invoke-WebRequest -Uri "$Base/SHA256SUMS.txt" -OutFile (Join-Path $Tmp "SHA256SUMS.txt")
+Write-ActStep "DOWNLOAD" $Asset
 
 $Expected = (Get-Content (Join-Path $Tmp "SHA256SUMS.txt") |
     Where-Object { $_ -match "  $Asset$" } |
@@ -95,12 +162,13 @@ $Actual = (Get-FileHash -Algorithm SHA256 (Join-Path $Tmp $Asset)).Hash.ToLower(
 if (-not $Expected -or $Expected -ne $Actual) {
     throw "checksum mismatch for $Asset"
 }
+Write-ActStep "VERIFY" "SHA-256 ✓"
 
 # Extract + install
 New-Item -ItemType Directory -Force -Path $Prefix | Out-Null
 Expand-Archive -Force -Path (Join-Path $Tmp $Asset) -DestinationPath $Tmp
 Copy-Item -Force (Join-Path $Tmp "act.exe") $BinPath
-Write-Host "==> installed $BinPath"
+Write-ActStep "INSTALL" $BinPath
 
 # Add to user PATH if missing
 $UserPath = [Environment]::GetEnvironmentVariable("Path", "User")
@@ -126,17 +194,66 @@ Set-Content -Path $ConfigFile -Value $TomlContent -Encoding UTF8
 # TOS handling
 $HasTty = [Environment]::UserInteractive
 switch ($Tos) {
-    "yes" { & $BinPath tos accept --scripted }
-    "no" { Write-Host "!! TOS not accepted. Run '$BinPath tos accept' before first use." }
+    "yes" {
+        & $BinPath tos accept --yes 2>$null
+        Write-ActStep "TOS" "✓"
+    }
+    "no" { Write-Host "  Terms: https://act101.ai/terms (not yet accepted)" }
     "ask" {
         if ($HasTty) {
-            & $BinPath tos accept
-            if ($LASTEXITCODE -ne 0) { throw "TOS declined; install aborted" }
+            Write-Host ""
+            Write-Wht "  Terms of service: "; Write-Host "https://act101.ai/terms"
+            $reply = Read-Host "  Accept? [Y/n]"
+            if (-not $reply -or $reply.ToLower() -in @("y","yes")) {
+                & $BinPath tos accept --yes 2>$null
+                Write-ActStep "TOS" "✓"
+            } else {
+                Write-Host "  TOS declined; install aborted"
+                exit 1
+            }
         } else {
-            Write-Host "!! TOS not accepted (non-interactive). Run '$BinPath tos accept' before first use."
+            Write-Host "  Terms: https://act101.ai/terms (run '$BinPath tos accept' before first use)"
         }
     }
 }
 
 Remove-Item -Recurse -Force $Tmp
-Write-Host "==> Done. Run 'act --help' to get started (you may need to open a new shell)."
+
+# --- Host detection ---
+$DetectedHosts = Find-Hosts
+
+foreach ($h in $DetectedHosts) {
+    switch ($h) {
+        "claude-code" {
+            switch ($ClaudePlugin) {
+                "yes" {
+                    & $BinPath install claude-code 2>$null
+                    Write-ActStep "REGISTER" "Claude Code ✓"
+                }
+                "no" { }
+                "ask" {
+                    if ($HasTty -and (Get-Command claude -ErrorAction SilentlyContinue)) {
+                        $reply = Read-Host "  Register with Claude Code? [Y/n]"
+                        if (-not $reply -or $reply.ToLower() -in @("y","yes")) {
+                            & $BinPath install claude-code 2>$null
+                            Write-ActStep "REGISTER" "Claude Code ✓"
+                        } else { Write-Host "  Skipped." }
+                    }
+                }
+            }
+        }
+        default {
+            Write-Host "  Detected $h — run 'act guidance' for setup"
+        }
+    }
+}
+
+try {
+    $StatusJson = & $BinPath --format json status 2>$null | ConvertFrom-Json
+    $Tools = $StatusJson.tool_count
+    $Langs = $StatusJson.language_count
+} catch {
+    $Tools = "?"
+    $Langs = "100"
+}
+Write-ActFinale $VerNoV "$Tools" "$Langs"

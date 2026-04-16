@@ -1,6 +1,6 @@
 {
   "mcpServers": {
-    "act": {
+    "act101": {
       "command": "node",
       "args": ["${CLAUDE_PLUGIN_ROOT}/bin/act.js", "mcp", "serve"],
       "env": {

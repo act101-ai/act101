@@ -6,17 +6,19 @@
 #   --accept-terms-of-service=<yes|no|ask>  TOS handling (default: ask)
 #   --enable-daemon=<yes|no|ask>            Daemon preference (default: ask)
 #   --auto-start=<yes|no|ask>               Auto-start preference (default: ask)
+#   --install-claude-plugin=<yes|no|ask>    Register with Claude Code (default: ask)
 #   --prefix=<path>                         Install prefix
 #   --version=<vX.Y.Z>                      Pin version
 #
 # Environment variables (alternative to flags):
-#   ACT_ACCEPT_TOS, ACT_ENABLE_DAEMON, ACT_AUTO_START, ACT_PREFIX, ACT_VERSION
+#   ACT_ACCEPT_TOS, ACT_ENABLE_DAEMON, ACT_AUTO_START,
+#   ACT_INSTALL_CLAUDE_PLUGIN, ACT_PREFIX, ACT_VERSION
 #
 # Uninstall:
 #   curl -sSL https://act101.ai/install.sh | sh -s uninstall
 
 # ACT_DEFAULT_VERSION is substituted at release time by the build-installers job.
-: "${ACT_DEFAULT_VERSION:=v0.7.18}"
+: "${ACT_DEFAULT_VERSION:=v0.7.19}"
 : "${ACT_GITHUB_REPO:=act101-ai/act101}"
 
 detect_os() {
@@ -66,15 +68,123 @@ parse_tristate() {
     esac
 }
 
+# --- colors (respect NO_COLOR / ACT_NO_COLOR) ---
+if [ -n "${NO_COLOR:-}" ] || [ -n "${ACT_NO_COLOR:-}" ] || [ ! -t 1 ]; then
+    ORANGE="" GRAY="" WHITE="" BOLD="" RESET="" DIM=""
+else
+    ORANGE=$'\033[38;5;208m'
+    GRAY=$'\033[38;5;245m'
+    WHITE=$'\033[97m'
+    BOLD=$'\033[1m'
+    RESET=$'\033[0m'
+    DIM=$'\033[2m'
+fi
+
+TRIPLETS_DOWNLOAD=(
+    "arduously:collecting:things"
+    "anxiously:counting:tokens"
+    "acquiring:compressed:tarball"
+    "another:cool:tool"
+)
+TRIPLETS_VERIFY=(
+    "absolutely:checking:that"
+    "assessing:cryptographic:truth"
+    "anxiously:confirming:things"
+    "authenticating:content:trustworthiness"
+)
+TRIPLETS_INSTALL=(
+    "assembling:cool:tools"
+    "actually:configuring:things"
+    "aggressively:claiming:territory"
+    "adding:capabilities:though"
+)
+TRIPLETS_TOS=(
+    "attorneys:crafted:this"
+    "acknowledging:conditions:transparently"
+    "anxiously:consenting:though"
+    "accepting:conditions:thoughtfully"
+)
+TRIPLETS_REGISTER=(
+    "attaching:claude:tools"
+    "augmenting:coding:talent"
+    "agents:cooperating:today"
+    "anxiously:connecting:things"
+)
+
+act_random_triplet() {
+    local -n arr=$1
+    local idx=$(( RANDOM % ${#arr[@]} ))
+    echo "${arr[$idx]}"
+}
+
+act_print_triplet() {
+    local a="$1" c="$2" t="$3"
+    printf "%s%s%s %s·%s %s%s%s %s·%s %s%s%s" \
+        "$WHITE" "$a" "$RESET" "$GRAY" "$RESET" \
+        "$WHITE" "$c" "$RESET" "$GRAY" "$RESET" \
+        "$WHITE" "$t" "$RESET"
+}
+
+act_step() {
+    local phase="$1" result="$2"
+    if [ -n "${ACT_NON_INTERACTIVE:-}" ] || [ ! -t 1 ]; then
+        echo "  $phase  $result"
+        return
+    fi
+    local triplet
+    triplet="$(act_random_triplet "TRIPLETS_${phase}")"
+    local a c t
+    IFS=: read -r a c t <<< "$triplet"
+    printf "  "
+    act_print_triplet "$a" "$c" "$t"
+    printf "       %s%s%s\n" "$GRAY" "$result" "$RESET"
+}
+
+act_banner() {
+    printf "\n  %s%sact101%s\n\n" "$ORANGE" "$BOLD" "$RESET"
+}
+
+act_finale() {
+    local version="$1" tools="$2" langs="$3"
+    printf "\n"
+    printf "  %s┌──────────────────────────────────────────────┐%s\n" "$ORANGE" "$RESET"
+    printf "  %s│%s  %sanalyze%s %s·%s %scode%s %s·%s %stransform%s                  %s│%s\n" \
+        "$ORANGE" "$RESET" "$WHITE" "$RESET" "$GRAY" "$RESET" "$WHITE" "$RESET" "$GRAY" "$RESET" "$WHITE" "$RESET" "$ORANGE" "$RESET"
+    printf "  %s│%s                                              %s│%s\n" "$ORANGE" "$RESET" "$ORANGE" "$RESET"
+    printf "  %s│%s  act v%s · %s tools · %s+ languages    %s│%s\n" \
+        "$ORANGE" "$RESET" "$version" "$tools" "$langs" "$ORANGE" "$RESET"
+    printf "  %s│%s                                              %s│%s\n" "$ORANGE" "$RESET" "$ORANGE" "$RESET"
+    printf "  %s│%s  Ask your agent, or run: act --help          %s│%s\n" "$ORANGE" "$RESET" "$ORANGE" "$RESET"
+    printf "  %s└──────────────────────────────────────────────┘%s\n\n" "$ORANGE" "$RESET"
+}
+
+detect_hosts() {
+    DETECTED_HOSTS=""
+    if command -v claude >/dev/null 2>&1; then
+        DETECTED_HOSTS="${DETECTED_HOSTS} claude-code"
+    fi
+    local home="${HOME:-}"
+    [ -d "$home/.cursor" ] && DETECTED_HOSTS="${DETECTED_HOSTS} cursor"
+    [ -d "$home/.windsurf" ] && DETECTED_HOSTS="${DETECTED_HOSTS} windsurf"
+    { [ -d "${XDG_CONFIG_HOME:-$home/.config}/zed" ] || [ -d "$home/Library/Application Support/Zed" ]; } && DETECTED_HOSTS="${DETECTED_HOSTS} zed"
+    command -v codex >/dev/null 2>&1 && DETECTED_HOSTS="${DETECTED_HOSTS} codex"
+    [ -d "$home/.continue" ] && DETECTED_HOSTS="${DETECTED_HOSTS} continue"
+    DETECTED_HOSTS="$(echo "$DETECTED_HOSTS" | xargs)"
+    echo "$DETECTED_HOSTS"
+}
+
 # Allow bats to source this file without executing main.
 if [ -n "${ACT_INSTALL_LIB:-}" ]; then return 0; fi
 
 set -euo pipefail
 
+act_banner
+
 # --- arg parsing ---
 TOS="${ACT_ACCEPT_TOS:-}"
 DAEMON="${ACT_ENABLE_DAEMON:-}"
 AUTOSTART="${ACT_AUTO_START:-}"
+CLAUDE_PLUGIN="${ACT_INSTALL_CLAUDE_PLUGIN:-}"
 PREFIX="${ACT_PREFIX:-}"
 VERSION="${ACT_VERSION:-}"
 MODE="install"
@@ -85,6 +195,7 @@ for arg in "$@"; do
         --accept-terms-of-service=*) TOS="${arg#*=}" ;;
         --enable-daemon=*) DAEMON="${arg#*=}" ;;
         --auto-start=*) AUTOSTART="${arg#*=}" ;;
+        --install-claude-plugin=*) CLAUDE_PLUGIN="${arg#*=}" ;;
         --prefix=*) PREFIX="${arg#*=}" ;;
         --version=*) VERSION="${arg#*=}" ;;
         --help|-h)
@@ -97,6 +208,7 @@ done
 TOS="$(parse_tos_value "$TOS")"
 DAEMON="$(parse_tristate "$DAEMON")"
 AUTOSTART="$(parse_tristate "$AUTOSTART")"
+CLAUDE_PLUGIN="$(parse_tristate "$CLAUDE_PLUGIN")"
 
 OS="$(detect_os)"
 ARCH="$(detect_arch)"
@@ -127,8 +239,6 @@ if [ "$VERSION" = latest ]; then
 fi
 VER_NO_V="${VERSION#v}"
 
-echo "==> act $VERSION for $TARGET"
-
 # --- download + verify ---
 TMPDIR="$(mktemp -d)"
 trap 'rm -rf "$TMPDIR"' EXIT
@@ -136,18 +246,20 @@ BASE="https://github.com/$ACT_GITHUB_REPO/releases/download/$VERSION"
 ASSET="act-$TARGET.tar.gz"
 curl -fSL -o "$TMPDIR/$ASSET" "$BASE/$ASSET"
 curl -fSL -o "$TMPDIR/SHA256SUMS.txt" "$BASE/SHA256SUMS.txt"
+act_step "DOWNLOAD" "$ASSET"
 
 EXPECTED="$(grep " $ASSET$" "$TMPDIR/SHA256SUMS.txt" | awk '{print $1}')"
 ACTUAL="$(sha256sum "$TMPDIR/$ASSET" | awk '{print $1}')"
 if [ -z "$EXPECTED" ] || [ "$EXPECTED" != "$ACTUAL" ]; then
     echo "checksum mismatch for $ASSET" >&2; exit 1
 fi
+act_step "VERIFY" "SHA-256 ✓"
 
 # --- extract + install ---
 mkdir -p "$PREFIX"
 tar xzf "$TMPDIR/$ASSET" -C "$TMPDIR"
 install -m 755 "$TMPDIR/act" "$PREFIX/act"
-echo "==> installed $PREFIX/act"
+act_step "INSTALL" "$PREFIX/act"
 
 # PATH warning for non-root
 if [ "$(id -u)" != 0 ] && ! echo ":$PATH:" | grep -q ":$PREFIX:"; then
@@ -171,15 +283,73 @@ EOF
 HAS_TTY=0; [ -t 0 ] && HAS_TTY=1
 case "$TOS" in
     yes)
-        "$PREFIX/act" tos accept --scripted ;;
+        "$PREFIX/act" tos accept --yes 2>/dev/null
+        act_step "TOS" "✓"
+        ;;
     no)
-        echo "!! TOS not accepted. Run '$PREFIX/act tos accept' before first use." ;;
+        echo "  Terms: https://act101.ai/terms (not yet accepted)"
+        ;;
     ask)
         if [ "$HAS_TTY" = 1 ]; then
-            "$PREFIX/act" tos accept || { echo "TOS declined; install aborted"; exit 1; }
+            printf "\n  Terms of service: %shttps://act101.ai/terms%s\n" "$WHITE" "$RESET"
+            printf "  Accept? [Y/n] "
+            read -r reply </dev/tty || reply=""
+            case "${reply,,}" in
+                ""|y|yes)
+                    "$PREFIX/act" tos accept --yes 2>/dev/null
+                    act_step "TOS" "✓"
+                    ;;
+                *)
+                    echo "  TOS declined; install aborted"
+                    exit 1
+                    ;;
+            esac
         else
-            echo "!! TOS not accepted (non-interactive). Run '$PREFIX/act tos accept' before first use."
-        fi ;;
+            echo "  Terms: https://act101.ai/terms (run 'act tos accept' before first use)"
+        fi
+        ;;
 esac
 
-echo "==> Done. Run '$PREFIX/act --help' to get started."
+# --- Host detection ---
+DETECTED="$(detect_hosts)"
+
+for host in $DETECTED; do
+    case "$host" in
+        claude-code)
+            case "$CLAUDE_PLUGIN" in
+                yes)
+                    "$PREFIX/act" install claude-code 2>/dev/null
+                    act_step "REGISTER" "Claude Code ✓"
+                    ;;
+                no) : ;;
+                ask)
+                    if [ "$HAS_TTY" = 1 ]; then
+                        printf "  Register with Claude Code? [Y/n] "
+                        read -r reply </dev/tty || reply=""
+                        case "${reply,,}" in
+                            ""|y|yes)
+                                "$PREFIX/act" install claude-code 2>/dev/null
+                                act_step "REGISTER" "Claude Code ✓"
+                                ;;
+                            *) echo "  Skipped." ;;
+                        esac
+                    fi
+                    ;;
+            esac
+            ;;
+        *)
+            echo "  Detected ${host} — run 'act guidance' for setup"
+            ;;
+    esac
+done
+
+if command -v "$PREFIX/act" >/dev/null 2>&1; then
+    STATUS_JSON="$("$PREFIX/act" --format json status 2>/dev/null || echo '{}')"
+    TOOLS="$(echo "$STATUS_JSON" | sed -n 's/.*"tool_count":\([0-9]*\).*/\1/p')"
+    LANGS="$(echo "$STATUS_JSON" | sed -n 's/.*"language_count":\([0-9]*\).*/\1/p')"
+    [ -z "$TOOLS" ] && TOOLS="?"
+    [ -z "$LANGS" ] && LANGS="100"
+    act_finale "$VER_NO_V" "$TOOLS" "$LANGS"
+else
+    echo "==> Done. Run 'act --help' to get started."
+fi

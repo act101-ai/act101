@@ -1,6 +1,6 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
-  "name": "act-marketplace",
+  "name": "act101-marketplace",
   "description": "AST-aware code transformation tools for AI agents. 141 refactoring operations across 41 languages.",
   "owner": {
     "name": "Kage Martin",
@@ -8,9 +8,9 @@
   },
   "plugins": [
     {
-      "name": "act",
+      "name": "act101",
       "description": "AST-aware code transformer for AI agents. 140+ refactoring operations across 100+ languages with undo/redo, preview mode, and intelligent guardrails.",
-      "version": "0.7.18",
+      "version": "0.7.19",
       "author": {
         "name": "Kage Martin",
         "url": "https://github.com/act101-ai"
