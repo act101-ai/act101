@@ -84,7 +84,7 @@ function Find-Hosts {
 }
 
 # ACT_DEFAULT_VERSION is substituted at release time
-$DefaultVersion = if ($env:ACT_VERSION) { $env:ACT_VERSION } else { "v0.8.1" }
+$DefaultVersion = if ($env:ACT_VERSION) { $env:ACT_VERSION } else { "v1.0.1" }
 $Repo = if ($env:ACT_GITHUB_REPO) { $env:ACT_GITHUB_REPO } else { "act101-ai/act101" }
 
 function Resolve-Tristate([string]$v, [string]$default = "ask") {
