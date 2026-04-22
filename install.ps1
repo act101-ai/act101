@@ -20,6 +20,10 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+# Force TLS 1.2 — WinPS 5.1 on older Windows builds defaults to SSL3/TLS1.0, which GitHub rejects.
+[Net.ServicePointManager]::SecurityProtocol =
+    [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
+
 # --- Colors (respect $env:NO_COLOR) ---
 $UseColor = -not $env:NO_COLOR -and [Environment]::UserInteractive
 function Write-Orange([string]$text) { if ($UseColor) { Write-Host $text -ForegroundColor DarkYellow -NoNewline } else { Write-Host $text -NoNewline } }
@@ -73,18 +77,18 @@ function Write-ActFinale([string]$ver, [string]$tools, [string]$langs) {
 
 function Find-Hosts {
     $hosts = @()
+    $userHome = $env:USERPROFILE
     if (Get-Command claude -ErrorAction SilentlyContinue) { $hosts += "claude-code" }
-    $home = $env:USERPROFILE
-    if (Test-Path "$home\.cursor") { $hosts += "cursor" }
-    if (Test-Path "$home\.windsurf") { $hosts += "windsurf" }
+    if (Test-Path "$userHome\.cursor") { $hosts += "cursor" }
+    if (Test-Path "$userHome\.windsurf") { $hosts += "windsurf" }
     if ((Test-Path "$env:APPDATA\zed") -or (Test-Path "$env:APPDATA\Zed")) { $hosts += "zed" }
     if (Get-Command codex -ErrorAction SilentlyContinue) { $hosts += "codex" }
-    if (Test-Path "$home\.continue") { $hosts += "continue" }
+    if (Test-Path "$userHome\.continue") { $hosts += "continue" }
     return $hosts
 }
 
 # ACT_DEFAULT_VERSION is substituted at release time
-$DefaultVersion = if ($env:ACT_VERSION) { $env:ACT_VERSION } else { "v1.0.2" }
+$DefaultVersion = if ($env:ACT_VERSION) { $env:ACT_VERSION } else { "v1.0.3" }
 $Repo = if ($env:ACT_GITHUB_REPO) { $env:ACT_GITHUB_REPO } else { "act101-ai/act101" }
 
 function Resolve-Tristate([string]$v, [string]$default = "ask") {
@@ -110,10 +114,10 @@ function Select-Target([string]$arch) {
     throw "unsupported arch: $arch"
 }
 
-$Tos = Resolve-Tristate $AcceptTermsOfService (if ($env:ACT_ACCEPT_TOS) { $env:ACT_ACCEPT_TOS } else { "ask" })
-$Daemon = Resolve-Tristate $EnableDaemon (if ($env:ACT_ENABLE_DAEMON) { $env:ACT_ENABLE_DAEMON } else { "ask" })
-$AutoS = Resolve-Tristate $AutoStart (if ($env:ACT_AUTO_START) { $env:ACT_AUTO_START } else { "ask" })
-$ClaudePlugin = Resolve-Tristate $InstallClaudePlugin (if ($env:ACT_INSTALL_CLAUDE_PLUGIN) { $env:ACT_INSTALL_CLAUDE_PLUGIN } else { "ask" })
+$Tos = Resolve-Tristate $AcceptTermsOfService $(if ($env:ACT_ACCEPT_TOS) { $env:ACT_ACCEPT_TOS } else { "ask" })
+$Daemon = Resolve-Tristate $EnableDaemon $(if ($env:ACT_ENABLE_DAEMON) { $env:ACT_ENABLE_DAEMON } else { "ask" })
+$AutoS = Resolve-Tristate $AutoStart $(if ($env:ACT_AUTO_START) { $env:ACT_AUTO_START } else { "ask" })
+$ClaudePlugin = Resolve-Tristate $InstallClaudePlugin $(if ($env:ACT_INSTALL_CLAUDE_PLUGIN) { $env:ACT_INSTALL_CLAUDE_PLUGIN } else { "ask" })
 
 if (-not $Prefix) {
     if ($env:ACT_PREFIX) { $Prefix = $env:ACT_PREFIX }
@@ -150,12 +154,13 @@ New-Item -ItemType Directory -Force -Path $Tmp | Out-Null
 $Asset = "act-$Target.zip"
 $Base = "https://github.com/$Repo/releases/download/$Version"
 
-Invoke-WebRequest -Uri "$Base/$Asset" -OutFile (Join-Path $Tmp $Asset)
-Invoke-WebRequest -Uri "$Base/SHA256SUMS.txt" -OutFile (Join-Path $Tmp "SHA256SUMS.txt")
+Invoke-WebRequest -UseBasicParsing -Uri "$Base/$Asset" -OutFile (Join-Path $Tmp $Asset)
+Invoke-WebRequest -UseBasicParsing -Uri "$Base/SHA256SUMS.txt" -OutFile (Join-Path $Tmp "SHA256SUMS.txt")
 Write-ActStep "DOWNLOAD" $Asset
 
+$AssetPattern = "  " + [regex]::Escape($Asset) + "$"
 $Expected = (Get-Content (Join-Path $Tmp "SHA256SUMS.txt") |
-    Where-Object { $_ -match "  $Asset$" } |
+    Where-Object { $_ -match $AssetPattern } |
     Select-Object -First 1) -split ' ' | Select-Object -First 1
 $Actual = (Get-FileHash -Algorithm SHA256 (Join-Path $Tmp $Asset)).Hash.ToLower()
 
