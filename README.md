@@ -1,23 +1,31 @@
-# act
+# act101
 
-**AST-aware code transformer for AI coding agents.** 65+ MCP tools for
-code analysis and refactoring across 190+ languages and representational
-grammars — typically 80–99% fewer tokens than reading source files with
-built-in tools.
+**AST-aware code transformer for AI coding agents.** 179 code navigation,
+refactoring, and analysis operations across 159 languages and representational
+grammars — ~85% fewer tokens than file-based operations (benchmark average).
 
-This repository is the **public distribution point** for `act`: plugin
+This repository is the **public distribution point** for `act101`: plugin
 files for the [Claude Code](https://claude.ai/code) marketplace and
-pre-built binaries for every supported platform. Source code lives in
-a separate, gated repository.
+pre-built binaries for every supported platform.
+
+---
+
+## What's new
+
+### v1.0.4
+
+- `act update --version` pins a specific release during in-place upgrades
+- `act stats` estimates token savings for your workspace, based on benchmark medians
+
+Full release history in [CHANGELOG.md](https://github.com/act101-ai/act101/blob/main/CHANGELOG.md).
 
 ---
 
 ## Install
 
-All install paths produce a single statically-linked (or
-dependency-free) executable. The recommended path is the shell
-installer — it handles binary download, Terms of Service, and
-optionally wires the Claude Code plugin in one step.
+All install paths produce a single dependency-free native executable. 
+The recommended path is the shell installer — it handles binary download, 
+Terms of Service, and optionally wires the Claude Code plugin in one step.
 
 ### 1. Shell installer (Linux, macOS) — recommended
 
@@ -129,7 +137,7 @@ Claude Code's standard tool-consent UI is the acceptance surface.
 
 ## Generous free tier
 
-**act is free for personal and open-source use — forever.** No license
+**act101 is free for personal and open-source use — forever.** No license
 key, no account, no expiration. All query tools, all core languages,
 rename, fix-auto, and three analysis tools — included permanently.
 
@@ -140,12 +148,8 @@ use. See [pricing](https://act101.ai/pricing) for details.
 
 ### Planned (not yet wired)
 
-- **License key activation** for paid tiers — `act license activate
-  <key>` will record and validate the key locally.
-- **OAuth registration** for seat management — `act login` will open a
+- **OAuth registration** for license management — `act login` will open a
   browser-based flow tied to an account.
-
-Neither is required for the free tier.
 
 ---
 
