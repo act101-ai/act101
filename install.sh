@@ -21,7 +21,7 @@
 #   curl -sSL https://act101.ai/install.sh | sh -s uninstall
 
 # ACT_DEFAULT_VERSION is substituted at release time by the build-installers job.
-: "${ACT_DEFAULT_VERSION:=v1.0.5}"
+: "${ACT_DEFAULT_VERSION:=v1.0.6}"
 : "${ACT_GITHUB_REPO:=act101-ai/act101}"
 
 # ---------------------------------------------------------------------------
@@ -166,22 +166,22 @@ act_banner() {
 }
 
 act_finale() {
-    version="$1" tools="$2" langs="$3"
+    version="$1" tools="$2" grammars="$3" ops="$4"
     # Inner box width (between the two `│` characters) — the top/bottom border
-    # uses 46 box-drawing dashes, so every content line must total 46 columns.
-    inner=46
-    line_b="  act v${version} · ${tools} tools · ${langs}+ languages"
+    # uses 56 box-drawing dashes, so every content line must total 56 columns.
+    inner=56
+    line_b="  act v${version} · ${tools} tools · ${ops} operations · ${grammars} grammars"
     pad_b=$(printf '%*s' $((inner - ${#line_b})) '')
     printf "\n"
-    printf "  %s┌──────────────────────────────────────────────┐%s\n" "$ORANGE" "$RESET"
-    printf "  %s│%s  %sanalyze%s %s·%s %scode%s %s·%s %stransform%s                  %s│%s\n" \
+    printf "  %s┌────────────────────────────────────────────────────────┐%s\n" "$ORANGE" "$RESET"
+    printf "  %s│%s  %sanalyze%s %s·%s %scode%s %s·%s %stransform%s                            %s│%s\n" \
         "$ORANGE" "$RESET" "$WHITE" "$RESET" "$GRAY" "$RESET" "$WHITE" "$RESET" "$GRAY" "$RESET" "$WHITE" "$RESET" "$ORANGE" "$RESET"
-    printf "  %s│%s                                              %s│%s\n" "$ORANGE" "$RESET" "$ORANGE" "$RESET"
-    printf "  %s│%s  act v%s · %s tools · %s+ languages%s%s│%s\n" \
-        "$ORANGE" "$RESET" "$version" "$tools" "$langs" "$pad_b" "$ORANGE" "$RESET"
-    printf "  %s│%s                                              %s│%s\n" "$ORANGE" "$RESET" "$ORANGE" "$RESET"
-    printf "  %s│%s  Ask your agent, or run: act --help          %s│%s\n" "$ORANGE" "$RESET" "$ORANGE" "$RESET"
-    printf "  %s└──────────────────────────────────────────────┘%s\n\n" "$ORANGE" "$RESET"
+    printf "  %s│%s                                                        %s│%s\n" "$ORANGE" "$RESET" "$ORANGE" "$RESET"
+    printf "  %s│%s  act v%s · %s tools · %s operations · %s grammars%s%s│%s\n" \
+        "$ORANGE" "$RESET" "$version" "$tools" "$ops" "$grammars" "$pad_b" "$ORANGE" "$RESET"
+    printf "  %s│%s                                                        %s│%s\n" "$ORANGE" "$RESET" "$ORANGE" "$RESET"
+    printf "  %s│%s  Ask your agent, or run: act --help                    %s│%s\n" "$ORANGE" "$RESET" "$ORANGE" "$RESET"
+    printf "  %s└────────────────────────────────────────────────────────┘%s\n\n" "$ORANGE" "$RESET"
 }
 
 detect_hosts() {
@@ -523,10 +523,12 @@ fi
 if [ -x "$ACT_BIN" ]; then
     STATUS_JSON=$("$ACT_BIN" --format json status 2>/dev/null || echo '{}')
     TOOLS=$(echo "$STATUS_JSON" | sed -n 's/.*"tool_count":\([0-9]*\).*/\1/p')
-    LANGS=$(echo "$STATUS_JSON" | sed -n 's/.*"language_count":\([0-9]*\).*/\1/p')
+    GRAMMARS=$(echo "$STATUS_JSON" | sed -n 's/.*"grammar_count":\([0-9]*\).*/\1/p')
+    OPS=$(echo "$STATUS_JSON" | sed -n 's/.*"operation_count":\([0-9]*\).*/\1/p')
     [ -z "$TOOLS" ] && TOOLS="?"
-    [ -z "$LANGS" ] && LANGS="100"
-    act_finale "$VER_NO_V" "$TOOLS" "$LANGS"
+    [ -z "$GRAMMARS" ] && GRAMMARS="?"
+    [ -z "$OPS" ] && OPS="?"
+    act_finale "$VER_NO_V" "$TOOLS" "$GRAMMARS" "$OPS"
 else
     echo "==> Done. Run 'act --help' to get started."
 fi
