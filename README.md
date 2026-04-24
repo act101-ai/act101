@@ -5,8 +5,9 @@ refactoring, and analysis operations across 159 languages and representational
 grammars — ~85% fewer tokens than file-based operations (benchmark average).
 
 This repository is the **public distribution point** for `act101`: plugin
-files for the [Claude Code](https://claude.ai/code) marketplace and
-pre-built binaries for every supported platform.
+files for the [Claude Code](https://claude.ai/code) and
+[Codex](https://developers.openai.com/codex) marketplaces and pre-built
+binaries for every supported platform.
 
 ---
 
@@ -84,7 +85,53 @@ back to downloading one under `${CLAUDE_PLUGIN_DATA}/bin`. Node 18+ on
 
 Tool list and skills are described in `plugin/README.md`.
 
-### 4. Manual download
+### 4. Codex marketplace (if you already have `act` on `PATH`)
+
+If you've already installed `act` via the shell installer, Homebrew, or
+built from source, you can register the plugin directly with Codex
+without re-downloading the binary:
+
+```bash
+codex plugin marketplace add act101-ai/act101
+```
+
+That registers the marketplace. To activate the `act101` plugin in
+your sessions, open Codex and run the `/plugins` slash command, then
+select **act101** → **Install plugin**. Codex 0.124.0 has no
+non-interactive install verb yet; the slash command is the install
+action.
+
+The same launcher and binary-resolution rules from §3 apply. Codex does
+not pre-warm the binary at session start, so the first MCP call after a
+fresh install pays a one-time download cost if no `act` is on `PATH`.
+
+### 5. opencode (if you already have `act` on `PATH`)
+
+If you've already installed `act` via the shell installer or built from
+source, register `act101` with [opencode](https://opencode.ai) in one
+command:
+
+```bash
+act install opencode
+```
+
+This writes the `act101` MCP server entry into
+`~/.config/opencode/opencode.json` (preserving any other `mcp.*` entries
+and JSONC comments) and deploys the act101 skill set into
+`~/.config/opencode/skills/`. Existing skill directories are skipped;
+pass `--force` to overwrite.
+
+To remove everything in one step:
+
+```bash
+act uninstall opencode
+```
+
+Uninstall walks the install manifest in `install.toml` and deletes only
+the files act wrote — user-added files in the same directories are
+preserved.
+
+### 6. Manual download
 
 Grab the archive for your platform from the
 [latest release](https://github.com/act101-ai/act101/releases/latest),

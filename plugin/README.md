@@ -12,9 +12,19 @@ AST-aware code transformer for AI agents. 17 MCP tools for code analysis and ref
 
 ## Installation
 
+### Claude Code
+
 ```
 claude plugin marketplace add act101-ai/act101
 claude plugin install act101@act101-marketplace
+```
+
+### Codex
+
+```
+codex plugin marketplace add act101-ai/act101
+# Then in any Codex session:
+#   /plugins   → select act101 → Install
 ```
 
 The plugin ships a small Node launcher that downloads the matching
