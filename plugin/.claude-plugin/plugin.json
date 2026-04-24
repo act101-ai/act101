@@ -1,6 +1,6 @@
 {
   "name": "act101",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "description": "AST-aware code transformer for AI agents. 17 MCP tools for code analysis and refactoring across 100+ languages with undo/redo, preview mode, and intelligent guardrails.",
   "hooks": {
     "SessionStart": [
