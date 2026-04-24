@@ -13,10 +13,15 @@ binaries for every supported platform.
 
 ## What's new
 
-### v1.0.4
+### v1.0.7
 
-- `act update --version` pins a specific release during in-place upgrades
-- `act stats` estimates token savings for your workspace, based on benchmark medians
+- Added marketplace install support for OpenAI Codex
+- Added install support for opencode
+
+### v1.0.6
+
+- `act update` now supported — with version pinning (`--version`) and automatic background updates
+- `act stats` now estimates token savings based on benchmark medians
 
 Full release history in [CHANGELOG.md](https://github.com/act101-ai/act101/blob/main/CHANGELOG.md).
 
