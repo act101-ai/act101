@@ -13,20 +13,17 @@ binaries for every supported platform.
 
 ## What's new
 
+### v1.0.14
+- Fixed: Python navigation issues (#2, #3)
+- Fixed: E0027 in UpdateArgs
+
+### v1.0.13
+- Docs build
+
 ### v1.0.12
 - Fixed: TSX operation mapping issue
-- Fixed: Architectural findings from /architecture:audit
-- Launched online docs site.
-
-### v1.0.11
-- Fixed: Codex marketplace invoking act101 MCP server as http
-- Added: streaming traces for analysis tools to improve agent feedback
-
-### v1.0.10
-- Added: exponential back-off for version update
-- Added: install support for opencode
-- Added: marketplace support for Codex
-- Added: GDShader query tools
+- Fixed: Architectural findings from `/architecture:audit`
+- Launched online docs generation.
 
 Full release history in [CHANGELOG.md](https://github.com/act101-ai/act101/blob/main/CHANGELOG.md).
 
