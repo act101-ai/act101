@@ -1,7 +1,7 @@
 # act101
 
-**AST-aware code transformer for AI coding agents.** 179 code navigation,
-refactoring, and analysis operations across 159 languages and representational
+**AST-aware code transformer for AI coding agents.** providing code navigation,
+refactoring, and analysis operations across 160+ languages and representational
 grammars — ~85% fewer tokens than file-based operations (benchmark average).
 
 This repository is the **public distribution point** for `act101`: plugin
@@ -12,6 +12,9 @@ binaries for every supported platform.
 ---
 
 ## What's new
+
+### v1.0.16 
+- Fixed assorted operation routing regressions in language providers
 
 ### v1.0.15
 - Fixed: auto-update exit case issues
