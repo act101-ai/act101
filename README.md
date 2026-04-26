@@ -13,15 +13,15 @@ binaries for every supported platform.
 
 ## What's new
 
-### v1.0.7
+### v1.0.11
+- Fixed: Codex marketplace invoking act101 MCP server as http
+- Added: streaming traces for analysis tools to improve agent feedback
 
-- Added marketplace install support for OpenAI Codex
-- Added install support for opencode
-
-### v1.0.6
-
-- `act update` now supported — with version pinning (`--version`) and automatic background updates
-- `act stats` now estimates token savings based on benchmark medians
+### v1.0.10
+- Added: exponential back-off for version update
+- Added: install support for opencode
+- Added: marketplace support for Codex
+- Added: GDShader query tools
 
 Full release history in [CHANGELOG.md](https://github.com/act101-ai/act101/blob/main/CHANGELOG.md).
 
