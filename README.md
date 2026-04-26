@@ -13,6 +13,11 @@ binaries for every supported platform.
 
 ## What's new
 
+### v1.0.12
+- Fixed: TSX operation mapping issue
+- Fixed: Architectural findings from /architecture:audit
+- Launched online docs site.
+
 ### v1.0.11
 - Fixed: Codex marketplace invoking act101 MCP server as http
 - Added: streaming traces for analysis tools to improve agent feedback
