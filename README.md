@@ -13,6 +13,10 @@ binaries for every supported platform.
 
 ## What's new
 
+### v1.0.15
+- Fixed: auto-update exit case issues
+- Fixed: configuration issue with auto-update
+
 ### v1.0.14
 - Fixed: Python navigation issues (#2, #3)
 - Fixed: E0027 in UpdateArgs
