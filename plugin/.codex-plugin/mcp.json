@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "act101": {
+      "command": "act",
+      "args": ["mcp", "serve"],
+      "env": {
+        "ACT_LOG_LEVEL": "warn"
+      }
+    }
+  }
+}

@@ -3,18 +3,7 @@
   "version": "1.0.16",
   "description": "AST-aware code transformer for AI agents. 17 MCP tools for code analysis and refactoring across 100+ languages with undo/redo, preview mode, and intelligent guardrails.",
   "skills": "./skills/",
-  "mcpServers": {
-    "act101": {
-      "command": "act",
-      "args": [
-        "mcp",
-        "serve"
-      ],
-      "env": {
-        "ACT_LOG_LEVEL": "warn"
-      }
-    }
-  },
+  "mcpServers": "./.codex-plugin/mcp.json",
   "author": {
     "name": "Kage Martin",
     "url": "https://github.com/act101-ai"
