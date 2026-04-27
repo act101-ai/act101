@@ -1,0 +1,21 @@
+{
+  "name": "act101-marketplace",
+  "interface": {
+    "displayName": "act101"
+  },
+  "plugins": [
+    {
+      "name": "act101",
+      "version": "1.0.16",
+      "source": {
+        "source": "local",
+        "path": "./plugin"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_USE"
+      },
+      "category": "Productivity"
+    }
+  ]
+}
