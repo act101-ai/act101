@@ -5,32 +5,21 @@ refactoring, and analysis operations across 160+ languages and representational
 grammars — ~85% fewer tokens than file-based operations (benchmark average).
 
 This repository is the **public distribution point** for `act101`: plugin
-files for the [Claude Code](https://claude.ai/code) and
-[Codex](https://developers.openai.com/codex) marketplaces and pre-built
+files for the [Claude Code](https://claude.ai/code),
+[Codex](https://developers.openai.com/codex), and
+[Cursor](https://cursor.com) marketplaces and pre-built
 binaries for every supported platform.
 
 ---
 
 ## What's new
 
-### v1.0.16 
-- Fixed assorted operation routing regressions in language providers
-
-### v1.0.15
-- Fixed: auto-update exit case issues
-- Fixed: configuration issue with auto-update
-
-### v1.0.14
-- Fixed: Python navigation issues (#2, #3)
-- Fixed: E0027 in UpdateArgs
-
-### v1.0.13
-- Docs build
-
-### v1.0.12
-- Fixed: TSX operation mapping issue
-- Fixed: Architectural findings from `/architecture:audit`
-- Launched online docs generation.
+### v1.0.21
+- Fixed Claude Code Marketplace
+- Fixed Codex Marketplace
+- Added Cursor Marketplace
+- Added Windsurf Marketplace
+- Added Zed Marketplace
 
 Full release history in [CHANGELOG.md](https://github.com/act101-ai/act101/blob/main/CHANGELOG.md).
 
@@ -145,7 +134,28 @@ Uninstall walks the install manifest in `install.toml` and deletes only
 the files act wrote — user-added files in the same directories are
 preserved.
 
-### 6. Manual download
+### 6. Cursor (if you already have `act` on `PATH`)
+
+Register `act101` with [Cursor](https://cursor.com) in one command:
+
+```bash
+act install cursor
+```
+
+This writes the `act101` MCP server entry into `~/.cursor/mcp.json`
+(preserving any other servers and JSONC comments). Restart Cursor to load it.
+
+Or one-click (requires `act` on your `PATH`):
+
+[![Add act101 to Cursor](https://img.shields.io/badge/Add%20to-Cursor-000000?logo=cursor)](cursor://anysphere.cursor-deeplink/mcp/install?name=act101&config=eyJjb21tYW5kIjoiYWN0IiwiYXJncyI6WyJtY3AiLCJzZXJ2ZSJdLCJlbnYiOnsiQUNUX0xPR19MRVZFTCI6Indhcm4ifX0=)
+
+To remove:
+
+```bash
+act uninstall cursor
+```
+
+### 7. Manual download
 
 Grab the archive for your platform from the
 [latest release](https://github.com/act101-ai/act101/releases/latest),

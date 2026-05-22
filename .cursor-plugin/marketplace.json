@@ -1,23 +1,33 @@
 {
-  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "act101-marketplace",
-  "description": "AST-aware code transformation tools for AI agents. 141 refactoring operations across 41 languages.",
   "owner": {
     "name": "Kage Martin",
     "url": "https://github.com/act101-ai"
   },
+  "metadata": {
+    "description": "AST-aware code transformation tools for AI agents. 140+ refactoring operations across 100+ languages."
+  },
   "plugins": [
     {
       "name": "act101",
+      "source": "./plugin",
       "description": "AST-aware code transformer for AI agents. 140+ refactoring operations across 100+ languages with undo/redo, preview mode, and intelligent guardrails.",
       "version": "1.0.21",
       "author": {
         "name": "Kage Martin",
         "url": "https://github.com/act101-ai"
       },
-      "source": "./plugin",
+      "homepage": "https://act101.ai",
+      "repository": "https://github.com/act101-ai/act101",
+      "license": "Commercial",
       "category": "development",
-      "homepage": "https://act101.ai"
+      "keywords": [
+        "refactoring",
+        "code-transformation",
+        "ast",
+        "code-analysis",
+        "mcp"
+      ]
     }
   ]
 }

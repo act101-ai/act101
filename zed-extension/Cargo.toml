@@ -1,0 +1,18 @@
+# Standalone package: an empty [workspace] table detaches it from the root
+# workspace so the native `cargo build --workspace` never tries to build this
+# wasm crate (and it never pulls zed_extension_api into the native lockfile).
+[workspace]
+
+[package]
+name = "zed_act101"
+version = "1.0.21"
+edition = "2021"
+publish = false
+license = "MIT"
+
+[lib]
+path = "src/lib.rs"
+crate-type = ["cdylib"]
+
+[dependencies]
+zed_extension_api = "0.7.0"

@@ -1,9 +1,7 @@
 {
   "name": "act101",
-  "version": "1.0.21",
   "description": "AST-aware code transformer for AI agents. 17 MCP tools for code analysis and refactoring across 100+ languages with undo/redo, preview mode, and intelligent guardrails.",
-  "skills": "./skills/",
-  "mcpServers": "./.codex-plugin/mcp.json",
+  "version": "1.0.21",
   "author": {
     "name": "Kage Martin",
     "url": "https://github.com/act101-ai"
@@ -11,40 +9,24 @@
   "homepage": "https://act101.ai",
   "repository": "https://github.com/act101-ai/act101",
   "license": "Commercial",
+  "skills": "./skills/",
+  "commands": "./commands/",
+  "agents": "./agents/",
+  "mcpServers": "./.cursor-plugin/mcp.json",
+  "hooks": {
+    "sessionStart": [
+      {
+        "command": "node \"${CURSOR_PLUGIN_ROOT}/bin/act.js\" --ensure"
+      }
+    ]
+  },
   "keywords": [
     "refactoring",
     "code-transformation",
     "ast",
     "code-analysis",
     "code-generation",
-    "typescript",
-    "rust",
-    "go",
-    "python",
     "multi-language",
-    "mcp",
-    "dart",
-    "bash",
-    "groovy",
-    "perl",
-    "lua",
-    "objective-c",
-    "vbnet",
-    "vb.net",
-    "julia",
-    "ocaml",
-    "r",
-    "cuda",
-    "solidity",
-    "pascal",
-    "common-lisp",
-    "lisp",
-    "powershell",
-    "cobol",
-    "v",
-    "vlang",
-    "json",
-    "css",
-    "svelte"
+    "mcp"
   ]
 }

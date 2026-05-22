@@ -36,6 +36,22 @@ on `PATH` is required.
 Supported targets: x86_64 / aarch64 Linux (gnu), x86_64 / aarch64 macOS,
 x86_64 / aarch64 Windows (MSVC).
 
+### Cursor
+
+```
+act install cursor
+```
+
+This writes the `act101` MCP server entry into `~/.cursor/mcp.json`
+(preserving any other servers and JSONC comments). Restart Cursor to load it.
+
+Or install from the Cursor marketplace once published, or one-click:
+
+[![Add act101 to Cursor](https://img.shields.io/badge/Add%20to-Cursor-000000?logo=cursor)](cursor://anysphere.cursor-deeplink/mcp/install?name=act101&config=eyJjb21tYW5kIjoiYWN0IiwiYXJncyI6WyJtY3AiLCJzZXJ2ZSJdLCJlbnYiOnsiQUNUX0xPR19MRVZFTCI6Indhcm4ifX0=)
+
+One-click install requires `act` already on your `PATH` (via the shell
+installer or a manual download).
+
 ## Skills
 
 - **Code Review** — Analyze code for bugs, complexity, unused symbols, structural issues

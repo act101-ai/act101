@@ -32,14 +32,25 @@ function die(msg, code = 1) {
     process.exit(code);
 }
 
-function readPluginVersion() {
-    const manifest = path.join(PLUGIN_ROOT, '.claude-plugin', 'plugin.json');
-    const raw = fs.readFileSync(manifest, 'utf8');
-    const { version } = JSON.parse(raw);
-    if (!version || typeof version !== 'string') {
-        die(`plugin.json is missing a version field at ${manifest}`);
+// Host plugin manifests, in preference order. The payload is shared across
+// Claude Code, Codex, and Cursor, so whichever host installed it determines
+// which manifest dir is present. All carry the same version (release-prepare
+// bumps them in lockstep), so any match is an acceptable version floor.
+const MANIFEST_DIRS = ['.cursor-plugin', '.codex-plugin', '.claude-plugin'];
+
+function readPluginVersion(root = PLUGIN_ROOT) {
+    const tried = [];
+    for (const dir of MANIFEST_DIRS) {
+        const manifest = path.join(root, dir, 'plugin.json');
+        tried.push(manifest);
+        if (!fs.existsSync(manifest)) continue;
+        const { version } = JSON.parse(fs.readFileSync(manifest, 'utf8'));
+        if (!version || typeof version !== 'string') {
+            die(`plugin.json is missing a version field at ${manifest}`);
+        }
+        return version;
     }
-    return version;
+    die(`no plugin.json with a version found in any of: ${tried.join(', ')}`);
 }
 
 function detectTarget() {
@@ -121,9 +132,37 @@ function extractArchive(archivePath, destDir) {
     }
 }
 
-function probePathBinary(expectedVersion) {
+function parseVersion(s) {
+    const m = /(\d+)\.(\d+)\.(\d+)/.exec(String(s));
+    if (!m) return null;
+    return [Number(m[1]), Number(m[2]), Number(m[3])];
+}
+
+function compareVersions(a, b) {
+    for (let i = 0; i < 3; i++) {
+        if (a[i] !== b[i]) return a[i] < b[i] ? -1 : 1;
+    }
+    return 0;
+}
+
+// The `act mcp` surface is a stable contract within a major version, so the
+// plugin's pinned version is a *floor*, not an exact target: any same-major
+// binary at or above the floor satisfies what the shipped skills call. A
+// different major may have moved the contract; an older binary may lack
+// tools we depend on. Reuse iff same major AND >= floor.
+function isCompatible(candidate, floor) {
+    const c = parseVersion(candidate);
+    const f = parseVersion(floor);
+    if (!c || !f) return false;
+    return c[0] === f[0] && compareVersions(c, f) >= 0;
+}
+
+function probePathBinary(floor, quiet = false) {
     // Look for an `act` already on PATH — the shell installer places one
-    // there. If its --version matches the plugin manifest, reuse it.
+    // there, and it self-updates. Reuse it when it satisfies the contract
+    // (same major, >= floor) so the plugin rides those updates instead of
+    // pinning a stale copy.
+    const say = quiet ? () => {} : log;
     const name = binaryName();
     const probe = spawnSync(process.platform === 'win32' ? 'where' : 'which', [name], {
         encoding: 'utf8',
@@ -136,33 +175,38 @@ function probePathBinary(expectedVersion) {
     if (v.status !== 0) return null;
     const match = /(\d+\.\d+\.\d+)/.exec(v.stdout || '');
     if (!match) return null;
-    if (match[1] !== expectedVersion) {
-        log(`ignoring ${candidate} (version ${match[1]} != plugin ${expectedVersion})`);
+    if (!isCompatible(match[1], floor)) {
+        say(`ignoring ${candidate} (v${match[1]} not compatible with plugin floor v${floor})`);
         return null;
     }
-    log(`using PATH binary: ${candidate}`);
+    say(`using PATH binary ${candidate} (v${match[1]}, plugin floor v${floor})`);
     return candidate;
 }
 
-async function ensureBinary() {
-    const version = readPluginVersion();
+async function ensureBinary({ quiet = false } = {}) {
+    const say = quiet ? () => {} : log;
+    const floor = readPluginVersion();
     const target = detectTarget();
-    const bin = binaryPath(version, target);
 
-    if (fs.existsSync(bin)) return bin;
-
-    const onPath = probePathBinary(version);
+    // 1. Prefer a compatible binary already on PATH (the self-updating shell
+    //    install) so the plugin rides its updates.
+    const onPath = probePathBinary(floor, quiet);
     if (onPath) return onPath;
 
-    const url = downloadUrl(version, target);
+    // 2. Otherwise reuse our own previously-downloaded copy at the floor.
+    const bin = binaryPath(floor, target);
+    if (fs.existsSync(bin)) return bin;
+
+    // 3. Last resort: download the floor release.
+    const url = downloadUrl(floor, target);
     const destDir = path.dirname(bin);
     fs.mkdirSync(destDir, { recursive: true });
 
     const archivePath = path.join(destDir, archiveName(target));
-    log(`downloading ${url}`);
+    say(`downloading ${url}`);
     await fetchWithRedirects(url, archivePath);
 
-    log(`extracting to ${destDir}`);
+    say(`extracting to ${destDir}`);
     extractArchive(archivePath, destDir);
 
     if (!fs.existsSync(bin)) {
@@ -173,7 +217,7 @@ async function ensureBinary() {
     }
     try { fs.unlinkSync(archivePath); } catch (_) { /* best-effort cleanup */ }
 
-    log(`installed act v${version} for ${target}`);
+    say(`installed act v${floor} for ${target}`);
     return bin;
 }
 
@@ -181,7 +225,11 @@ async function main() {
     const args = process.argv.slice(2);
     const ensureOnly = args[0] === '--ensure';
 
-    const bin = await ensureBinary();
+    // The SessionStart hook calls `--ensure`; stay silent on success so a
+    // routine probe/download isn't surfaced as a hook failure. Info goes to
+    // stderr (not stdout) so it can never corrupt the MCP stdio stream in
+    // `mcp serve`; errors still speak via die().
+    const bin = await ensureBinary({ quiet: ensureOnly });
     if (ensureOnly) return;
 
     const child = spawn(bin, args, { stdio: 'inherit' });
@@ -192,4 +240,8 @@ async function main() {
     child.on('error', (err) => die(`failed to spawn ${bin}: ${err.message}`));
 }
 
-main().catch((err) => die(err.stack || err.message));
+if (require.main === module) {
+    main().catch((err) => die(err.stack || err.message));
+}
+
+module.exports = { parseVersion, compareVersions, isCompatible, readPluginVersion };
