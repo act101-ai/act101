@@ -15,11 +15,11 @@ binaries for every supported platform.
 ## What's new
 
 ### v1.0.21
-- Fixed Claude Code Marketplace
-- Fixed Codex Marketplace
-- Added Cursor Marketplace
-- Added Windsurf Marketplace
-- Added Zed Marketplace
+- Claude Code: fixed marketplace install (`claude plugin marketplace add act101-ai/act101`)
+- Codex: fixed marketplace install (`codex plugin marketplace add act101-ai/act101`)
+- Cursor: added plugin manifest, `act install cursor`, and one-click "Add to Cursor" deeplink
+- Windsurf: added MCP auto-registration (`act install windsurf`)
+- Zed: added extension (`zed-extension/`)
 
 Full release history in [CHANGELOG.md](https://github.com/act101-ai/act101/blob/main/CHANGELOG.md).
 
