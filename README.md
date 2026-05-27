@@ -14,6 +14,12 @@ binaries for every supported platform.
 
 ## What's new
 
+### v1.0.23 
+- Various bugfixes
+
+### v1.0.22
+- Various bugfixes
+
 ### v1.0.21
 - Claude Code: fixed marketplace install (`claude plugin marketplace add act101-ai/act101`)
 - Codex: fixed marketplace install (`codex plugin marketplace add act101-ai/act101`)
