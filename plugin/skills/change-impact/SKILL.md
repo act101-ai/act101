@@ -17,11 +17,19 @@ map structure.
 
 ## Tools
 
-| Tool | Purpose | MCP call |
-|------|---------|----------|
-| `analyze_impact` | Blast radius (R1) | `analyze_impact` with `target: <X>` |
-| `analyze_test_gaps` | Is the target tested? (R5) | `analyze_test_gaps` |
-| `analyze_cycle_risk` | Is the target in a risky cycle? (R6) | `analyze_cycle_risk` |
+| Tool | Purpose | MCP call | Tier |
+|------|---------|----------|------|
+| `analyze_impact` (file mode) | Blast radius — files that depend on target (R1) | `analyze_impact` with `target: <file>` | Free |
+| `analyze_impact` (symbol mode) | Transitive callers of a function symbol | `analyze_impact` with `target: <file>` and `symbol: <name>` | Teams |
+| `analyze_test_gaps` | Is the target tested? (R5) | `analyze_test_gaps` | — |
+| `analyze_cycle_risk` | Is the target in a risky cycle? (R6) | `analyze_cycle_risk` | — |
+
+**Symbol mode workflow (Teams):** For PR review or before renaming/changing a function signature,
+run `skeleton` to confirm the function exists in the file, then use symbol mode to get the full
+transitive caller chain. Append `::<line>` to `symbol` to disambiguate overloads
+(e.g. `symbol: "process::42"`). Symbol mode uses syntactic-floor analysis; LSP is not required.
+The `confidence`, `modeled_kinds`, and `unresolved` fields in the result are honesty signals —
+review them to understand gaps in the analysis.
 
 If `analyze_test_gaps` or `analyze_cycle_risk` are unavailable: run `analyze_impact`
 only. Note which tools were skipped in the verdict and caveat accordingly.

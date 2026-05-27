@@ -14,6 +14,28 @@ binaries for every supported platform.
 
 ## What's new
 
+### v2.0.0 — the Semantic Intelligence Layer
+
+act101 now goes beyond navigating and refactoring code to *understanding* what
+it does and *proving* what a change preserves:
+
+- **Effects & dataflow** — `effect_summary` and `effect_closure` reveal a
+  function's side effects and purity across the call graph; `data_flow` traces
+  values within a function and `taint_flow` follows source→sink paths.
+- **Verification** — `verify_contract_preserved`, `verify_behavioral_equivalence`,
+  `verify_side_effects`, and `verify_diff_semantics` confirm an edit preserved
+  behavior across two versions; `verify_port_parity` checks a cross-language port
+  against its source.
+- **Security surfaces** — `unsafe_surface` and `secret_surface` flag dangerous
+  constructs and secret-touching code before an agent ships a change.
+- **Git & runtime evidence** — churn, co-change, ownership, and
+  coverage/profile/trace overlays ground structural analysis in real history and
+  execution.
+- **New agent skills** — security-surface, verify-refactor, safe-to-merge,
+  where-bugs-live, onboarding-map, dead-in-production, hot-path-refactor,
+  port-verify, refactor-receipt, and agent-safety-audit; architecture-audit and
+  migration-assessment now fold in runtime, git, and security enrichment.
+
 ### v1.0.23 
 - Various bugfixes
 

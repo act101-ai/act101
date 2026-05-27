@@ -58,6 +58,18 @@ installer or a manual download).
 - **Refactoring** — Semantic code transformations with preview and undo
 - **Codebase Analysis** — Systematic quality audit with prioritized recommendations
 - **Code Generation** — Batch generation of constructors, accessors, builders, serialization
+- **Security Surface** — AppSec report: dangerous constructs, secret-touching code, and source→sink taint flows (Teams)
+- **Verify Refactor** — Confirm a refactor preserved behavior: contract, side-effect, and CFG-equivalence checks across two versions of a function (Pro)
+- **Where Bugs Live** — Compose churn_hotspots × analyze_hotspots × co_change_clusters × ownership_map into a ranked, explained defect-risk list (Teams)
+- **Onboarding Map** — Compose repo_outline + analyze_entry_points + churn_hotspots + ownership_map into a guided reading order with risk flags (Teams)
+- **Dead in Production** — Compose analyze_dead_code ∩ coverage_overlay ∩ trace_overlay into a ranked safe-to-delete list (Teams)
+- **Hot Path Refactor** — Compose profile_overlay + analyze_hotspots + analyze_coupling into a ranked refactor-priority list (hot × hard intersections first; Teams)
+- **Safe to Merge** — Compose verify_diff_semantics + verify_test_impact + verify_side_effects into a merge / review / block verdict (Pro)
+- **Refactor Receipt** — Compose verify_diff_semantics + verify_side_effects + verify_test_impact + verify_contract_preserved into an audit artifact proving a refactor preserved behavior (Pro)
+- **Agent Safety Audit** — Compose secret_surface + taint_flow + analyze_impact + analyze_surface into an agent-edit safety report (Teams)
+- **Architecture Audit Plus** — The architecture audit enriched with coverage_overlay + churn_hotspots + co_change_clusters + ownership_map — runtime and git evidence on top of structure (Teams)
+- **Port Verify** — Compose verify_behavioral_equivalence (scope=port) + verify_port_parity + port_inventory drift into a port-correctness gate (Enterprise)
+- **Migration Readiness Plus** — The migration assessment enriched with taint_flow + secret_surface + unsafe_surface + coverage_overlay + churn_hotspots + ownership_map (Enterprise)
 
 ## Commands
 

@@ -9,7 +9,7 @@ description: >
 
 # Code Review with act
 
-Analyze code for issues using act's 8 query tools.
+Analyze code for issues using act's query tools.
 
 ## Start Here
 
@@ -34,6 +34,11 @@ skeleton(file="src/auth/login.ts")
 **symbols** — List all symbols with kinds and locations. Spot missing exports, large symbol counts.
 ```
 symbols(file="src/auth/login.ts")
+```
+
+**unsafe_surface** — Flag dangerous constructs: unsafe blocks, `eval`, raw SQL, FFI, reflective invocation, unsafe deserialization. Syntactic floor (works without LSP), upgrades confidence when LSP is warm. Run it on any file handling input, queries, or native interop.
+```
+unsafe_surface(file="src/db/query.ts")
 ```
 
 ### Requires LSP
@@ -80,7 +85,10 @@ get_type(file="src/api.ts", line=42, column=12)
 1. `diagnostics` on each changed file
 2. `skeleton` on changed files — check new structure
 3. `references` on renamed/moved symbols — verify all references updated
-4. `callers` on modified functions — assess impact
+4. `callers` on modified functions — assess impact (requires LSP)
+5. `analyze_impact` (symbol mode, Teams) on modified functions — transitive callers without LSP.
+   Use `skeleton` first to confirm the symbol name, then: `analyze_impact(target=<file>, symbol=<name>)`.
+   Review `confidence`, `modeled_kinds`, and `unresolved` fields for analysis gaps.
 
 ## What to Look For
 
@@ -94,6 +102,7 @@ get_type(file="src/api.ts", line=42, column=12)
 | Nesting depth >4 | skeleton | Warning |
 | Symbol with 0 references | references | Info |
 | High caller count (>10) | callers | Info |
+| eval / raw SQL / FFI / unsafe deserialize | unsafe_surface | Error/Warning |
 
 ## Advanced Patterns
 

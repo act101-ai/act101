@@ -5,7 +5,9 @@ description: >
   get the full structural picture of a codebase, assess overall health and porting
   readiness, find module boundaries, circular dependencies, coupling hotspots, dead code,
   or code patterns. Depth 3 — full audit with hypothesis-driven investigation.
-  Replaces the architectural-analysis skill.
+  Optionally enriches the structural audit with runtime and git evidence (coverage,
+  churn, co-change coupling, ownership) when those overlays are available.
+  Replaces the architectural-analysis and architecture-audit-plus skills.
 ---
 
 # Architecture Audit
@@ -160,3 +162,40 @@ Analysis History table.
    follow-up (capped at one extra round)
 5. Note negative space — absence of expected problems is a finding
 6. Executive summary must include an explicit Ready / Needs work / Not ready verdict
+
+## Optional Enrichment: Runtime & Git Evidence
+
+The structural audit above is AST/graph-based. When the workspace has a coverage
+run and git history, enrich each structural finding with evidence overlays so the
+report reflects what actually runs and what actually changes — not just the static
+graph. This is optional: skip any overlay whose evidence is absent and say so.
+
+**Tier:** the four overlays (`coverage_overlay`, `churn_hotspots` in workspace mode,
+`co_change_clusters`, `ownership_map`) are **Teams** and enforce that tier
+themselves; the base structural audit is unaffected. If an overlay is tier-blocked,
+its dimension is UNASSESSED — state it, never imply "clean."
+
+| Tool | Enriches |
+|---|---|
+| `coverage_overlay` | Joins lcov coverage onto symbols — turns "this hotspot is complex" into "complex AND uncovered." |
+| `churn_hotspots` | Ranks symbols by git change frequency × recency — "high coupling" becomes "high coupling AND frequently churned." |
+| `co_change_clusters` | Symbols that change together across history — confirms or contradicts the static clusters (hidden / shotgun-surgery coupling). |
+| `ownership_map` | Per-symbol author shares + bus factor — flags knowledge-concentration risk on critical modules. |
+
+**Enrichment workflow (after the structural audit):**
+
+1. `coverage_overlay` with the lcov `report` — a complexity hotspot or chokepoint
+   with `covered: false` is a high-risk node (complex, central, untested).
+2. `churn_hotspots` (workspace mode) — a high-coupling / high-instability module
+   that is also high-churn is an active design-debt accumulation point.
+3. `co_change_clusters` — where these disagree with the static `analyze_clusters`
+   boundaries, you have hidden coupling the structure does not show.
+4. `ownership_map` — a low bus factor on a chokepoint or god-module is a compounding
+   people-risk on top of the structural risk.
+
+When enrichment runs, every Risk and Recommendation should cite the structural
+finding AND its overlay evidence — e.g. "module X: instability 0.94, in 2 cycles
+(structure) + uncovered + 31 commits in 90 days + bus factor 1 (overlays) →
+top-priority refactor." Overlays are window-bounded: report `unmapped`/`modeled_kinds`
+and the coverage/git window as caveats. Absence of overlay evidence is "no evidence,"
+not absolution.
