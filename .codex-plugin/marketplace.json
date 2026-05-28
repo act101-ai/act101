@@ -6,7 +6,7 @@
   "plugins": [
     {
       "name": "act101",
-      "version": "1.1.0-beta",
+      "version": "1.1.1-beta",
       "source": {
         "source": "local",
         "path": "./plugin"

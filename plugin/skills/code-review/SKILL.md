@@ -4,7 +4,8 @@ description: >
   Review code for bugs, complexity, unused symbols, and structural issues using
   AST-aware analysis. Use when reviewing PRs, checking code quality, finding dead
   code, analyzing function complexity, auditing a codebase, or checking for type
-  errors. Works across TypeScript, Python, Rust, Go, and 14 more languages.
+  errors. Each call reports the kinds it modeled in `modeled_kinds` — that is the
+  honest coverage signal; the supported-language list is whatever act ships.
 ---
 
 # Code Review with act
