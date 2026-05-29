@@ -18,6 +18,43 @@ See `../analysis-protocol/references/protocol.md` for: artifact directory struct
 the investigation loop, depth levels, summary format, token budget rules, and project
 map structure. Read that document before proceeding.
 
+## Phase 0: Load the Prior Project Map (before any tool dispatch)
+
+Before dispatching anything, check for an existing `project-map.md` at the workspace root.
+**If it exists, read it first** and extract:
+
+- **Refuted & Re-characterized Findings** ledger — these are hypotheses already investigated
+  and disproven. Do **not** re-investigate them from scratch in Phase 2. Re-open a refuted
+  finding **only** if Phase 1 surfaces new structural evidence that contradicts the prior
+  refutation; otherwise carry each entry forward verbatim and note "previously refuted
+  (date), no new evidence" in the report. This is the single most important reason to read
+  the map first — it stops every audit from re-flagging the same disproven smells.
+- **Analysis History** table — for the trend verdict (improving / stable / degrading) and to
+  append (not overwrite) the new row.
+- **Chokepoints, hotspots, cycles, pattern counts** — capture prior numbers so the new report
+  can show deltas (e.g. "god_function 1,321 → 1,651"), and so a *newly appeared* cycle or
+  chokepoint is flagged as a regression.
+
+**Also read `remediation-log.md`** (workspace root, if present). This is the append-only ledger
+the `architectural-refactoring` skill writes — one row per remediation, keyed to a finding ID. It
+is the other half of the audit → refactor → re-audit loop: it tells you which prior findings were
+*claimed* fixed since the last audit, and how. Treat each `RESOLVED`/`PARTIAL` row not as truth
+but as a **hypothesis to re-verify** in Phase 2 against this run's fresh structural evidence:
+
+- If the structure confirms the fix (the cycle is gone, instability dropped, the god-object split),
+  reflect it in synthesis — mark the recommendation resolved, move the item out of Weaknesses, and
+  show it in the delta/trend.
+- If the structure *contradicts* the claim (the row says RESOLVED but the cycle is still present, or
+  a "split" reintroduced coupling elsewhere), that is a **regression / incomplete-remediation
+  finding** — surface it explicitly with the conflicting evidence.
+
+The audit only **reads** this log; the refactoring skill owns the writes. Never edit
+`remediation-log.md` from the audit.
+
+If no `project-map.md` exists, this is the first audit — note that, proceed to Phase 1, and
+create the map (including an empty Refuted ledger) during synthesis. A `remediation-log.md` with no
+prior map is an inconsistency — note it and treat its rows as unverified claims.
+
 ## Phase 1: Parallel Tool Dispatch
 
 Dispatch all available tools in a **single parallel batch** — never sequentially.
@@ -87,7 +124,17 @@ After all investigation subagents return:
    cluster B — skeleton shows it handles both auth and request routing, confirming
    god-object smell"
 3. **Note negative space** — absence of expected problems is a meaningful finding
-4. Write `report.md`, update `project-map.md` (full rewrite of all sections)
+4. **Record every refuted or re-characterized hypothesis** — for each Phase 2 hypothesis that
+   came back refuted, partially refuted, or re-characterized (the real issue differs from the
+   hypothesized smell), and for each tool output that is an artifact rather than a finding
+   (e.g. degenerate dead-code/cohesion/layers results), capture it with its disproving
+   evidence. These feed the project map's **Refuted & Re-characterized Findings** ledger.
+5. **Reconcile claimed remediations** — for each `remediation-log.md` row read in Phase 0, state
+   the verdict from this run's evidence: *confirmed* (fold into the map, mark the recommendation
+   resolved, show the delta), or *contradicted* (surface as a regression / incomplete-remediation
+   finding). Do not silently drop a claimed fix that the structure no longer supports.
+6. Write `report.md`, then update `project-map.md` (full rewrite of all sections, carrying the
+   Refuted ledger forward and reflecting confirmed remediations — see Project Map Updates)
 
 ## Report Structure
 
@@ -140,18 +187,60 @@ What the architecture does well. Notable absence of expected problems.
 ## Weaknesses
 Confirmed structural issues with evidence chains.
 
+## Refuted & Re-characterized Findings
+Hypotheses investigated and NOT confirmed (refuted / partially refuted / re-characterized),
+and tool outputs that are artifacts rather than findings. Each with its disproving evidence.
+Include findings carried forward from the prior project map (mark "previously refuted, no new
+evidence"). This section prevents future audits from re-flagging disproven smells.
+
 ## Risks
 Causal chains: what breaks first, what cascades, minimum intervention.
 
 ## Recommendations
-Prioritized, actionable steps. Each linked to a confirmed finding
-and a specific act MCP tool call or skill.
+Prioritized, actionable steps, each linked to a confirmed finding.
+
+When the audit confirms structural findings that warrant remediation (cycles, god
+objects, coupling hotspots, dead code), the single recommended next action is to run the
+`architectural-refactoring` skill — **not** a cherry-picked inline fix. That skill executes
+the prioritized set as a unit and records each remediation to `remediation-log.md`, which is
+what closes the audit → refactor → re-audit cycle and lets it go deeper each pass. Proposing a
+one-off "move X, fix two imports, re-run" edit here short-circuits the cycle and leaves no
+durable remediation record. The specific act MCP tool calls are the *mechanism* the refactoring
+skill uses, not a substitute for invoking it.
+
+Because the handoff is artifact-based (this report + `project-map.md` + `remediation-log.md` on
+disk), the refactoring skill needs no conversation context. Phrase the next action so it works
+from a clean slate, e.g.: "Clear context, then run `/architectural-refactoring` — it rehydrates
+from this report and the project map." Use individual tool-call recommendations only for findings
+that are genuinely outside a refactoring pass (e.g. "add a coverage run before the next audit").
 ```
 
 ## Project Map Updates
 
 Updates **all sections** of `project-map.md` (workspace root, full rewrite). Appends to the
 Analysis History table.
+
+**Confirmed remediations:** when this run's evidence confirms a `remediation-log.md` claim, reflect
+it in the rewritten map — drop or down-rank the resolved item in Chokepoints & Risks / Weaknesses,
+and let the resolution show in the delta and trend verdict. Do **not** copy the remediation log
+into the map and do **not** edit the log itself — the map records *current state*, the log records
+*actions taken*, and the refactoring skill owns the log. A claim the structure contradicts stays an
+open finding (and may warrant a Refuted-ledger entry if the "fix" was based on a misdiagnosis).
+
+**Refuted & Re-characterized Findings ledger (required):** the project map carries a persistent
+`## Refuted & Re-characterized Findings` section (see the protocol's Project Map Structure). On
+every run:
+
+1. **Carry forward** every entry from the prior map's ledger — never drop a refutation just
+   because this run didn't re-test it. Keep its original "Since" date.
+2. **Add** each newly refuted / re-characterized hypothesis and each newly identified tool
+   artifact from this run's Phase 2, with the disproving evidence and this run's date.
+3. **Update** an entry's status only if this run found new evidence that overturns the prior
+   refutation (e.g. a once-clean boundary now genuinely leaks) — note the change explicitly.
+
+Each ledger row: `| Finding | Status (REFUTED / RE-CHARACTERIZED / ARTIFACT / UNRELIABLE) |
+Since (date first established) | Evidence / why |`. This ledger is what Phase 0 reads on the
+next run to avoid re-investigating disproven smells.
 
 ## Rules
 
