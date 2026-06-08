@@ -9,22 +9,20 @@
 #   --install-claude-plugin=<yes|no|ask>    Register with Claude Code (default: ask)
 #   --prefix=<path>                         Install prefix
 #   --version=<vX.Y.Z>                      Pin version
-#   --channel=<stable|beta>                 Update channel (default: stable)
 #   --dry-run                               Print what would happen, make no changes
 #   --debug                                 Verbose trace output (set -x)
 #
 # Environment variables (alternative to flags):
 #   ACT_ACCEPT_TOS, ACT_ENABLE_DAEMON, ACT_AUTO_START,
 #   ACT_INSTALL_CLAUDE_PLUGIN, ACT_PREFIX, ACT_VERSION,
-#   ACT_CHANNEL, ACT_DRY_RUN=1, ACT_DEBUG=1
+#   ACT_DRY_RUN=1, ACT_DEBUG=1
 #
 # Uninstall:
 #   curl -sSL https://act101.ai/install.sh | sh -s uninstall
 
 # ACT_DEFAULT_VERSION is substituted at release time by the build-installers job.
-: "${ACT_DEFAULT_VERSION:=v1.7.3-beta}"
+: "${ACT_DEFAULT_VERSION:=v1.0.23}"
 : "${ACT_GITHUB_REPO:=act101-ai/act101}"
-: "${ACT_CHANNEL:=stable}"
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -80,34 +78,6 @@ parse_tristate() {
         yes|true|1|y) echo yes ;;
         no|false|0|n) echo no ;;
         *) echo "invalid value: $v (use yes|no|ask)" >&2; return 1 ;;
-    esac
-}
-
-resolve_version_for_channel() {
-    channel="$1"
-    repo="${ACT_GITHUB_REPO}"
-    case "$channel" in
-        ""|stable)
-            # /releases/latest skips prereleases automatically
-            curl -fsSL "https://api.github.com/repos/${repo}/releases/latest" \
-                | python3 -c "import json,sys; print(json.load(sys.stdin)['tag_name'])"
-            ;;
-        *)
-            # Beta or other: scan releases list for first matching prerelease
-            python3 - "$channel" "$repo" <<'PYEOF'
-import json, sys, urllib.request
-channel, repo = sys.argv[1], sys.argv[2]
-url = f"https://api.github.com/repos/{repo}/releases?per_page=20"
-with urllib.request.urlopen(url) as r:
-    releases = json.load(r)
-for rel in releases:
-    if rel.get("prerelease") and not rel.get("draft") and channel in rel["tag_name"]:
-        print(rel["tag_name"])
-        sys.exit(0)
-sys.stderr.write(f"No {channel} release found in {repo}\n")
-sys.exit(1)
-PYEOF
-            ;;
     esac
 }
 
@@ -310,7 +280,6 @@ for arg in "$@"; do
         --install-claude-plugin=*) CLAUDE_PLUGIN="${arg#*=}" ;;
         --prefix=*) PREFIX="${arg#*=}" ;;
         --version=*) VERSION="${arg#*=}" ;;
-        --channel=*) ACT_CHANNEL="${arg#*=}" ;;
         --dry-run) DRY_RUN=1 ;;
         --debug) ACT_DEBUG=1 ;;
         --help|-h)
@@ -366,7 +335,6 @@ if [ -n "${DRY_RUN:-}" ]; then
   daemon:        $DAEMON
   auto-start:    $AUTOSTART
   claude-plugin: $CLAUDE_PLUGIN
-  channel:       $ACT_CHANNEL
   version:       ${VERSION:-$ACT_DEFAULT_VERSION}
   github repo:   $ACT_GITHUB_REPO
 
@@ -391,10 +359,8 @@ fi
 # ---------------------------------------------------------------------------
 if [ -z "$VERSION" ]; then VERSION="$ACT_DEFAULT_VERSION"; fi
 if [ "$VERSION" = latest ]; then
-    VERSION=$(resolve_version_for_channel "$ACT_CHANNEL") || {
-        echo "Failed to resolve version for channel: $ACT_CHANNEL" >&2
-        exit 1
-    }
+    VERSION=$(curl -fsSL "https://api.github.com/repos/$ACT_GITHUB_REPO/releases/latest" \
+        | grep -E '"tag_name"' | head -1 | sed -E 's/.*"(v?[^"]+)".*/\1/')
     case "$VERSION" in v*) : ;; *) VERSION="v$VERSION" ;; esac
 fi
 VER_NO_V="${VERSION#v}"
@@ -455,16 +421,6 @@ installed_at = \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"
 enable_daemon = \"$DAEMON\"
 auto_start = \"$AUTOSTART\"
 "
-
-# Persist the channel so auto-update stays on the chosen channel.
-# Omit the [update] section entirely for the default stable channel —
-# act treats a missing/empty channel field as stable (backward-compatible).
-if [ "${ACT_CHANNEL:-stable}" != "stable" ] && [ -n "${ACT_CHANNEL:-}" ]; then
-    INSTALL_TOML_CONTENT="${INSTALL_TOML_CONTENT}
-[update]
-channel = \"${ACT_CHANNEL}\"
-"
-fi
 
 if [ -n "${DRY_RUN:-}" ]; then
     echo

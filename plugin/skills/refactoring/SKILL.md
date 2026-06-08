@@ -4,8 +4,8 @@ description: >
   Perform semantic code refactoring using AST-aware tools. Use when renaming symbols,
   extracting functions or variables, inlining code, moving symbols between files,
   organizing imports, or any code transformation that must update all references.
-  Supports preview mode and undo. Each call reports the kinds it modeled in
-  `modeled_kinds`; the supported-language list is whatever act ships.
+  Supports preview mode and undo. Works across TypeScript, Python, Rust, Go, and
+  14 more languages.
 ---
 
 # Refactoring with act

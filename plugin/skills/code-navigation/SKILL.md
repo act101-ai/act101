@@ -22,21 +22,17 @@ Do NOT read entire files when you can query for specific information.
 
 4. **Follow the dependency graph** — Use `graph` to understand how files are connected. Start from the file you're interested in with `--direction out` (what it depends on) or `--direction in` (what depends on it).
 
-5. **Use mutations for raw side-effect detection** — Before modifying a function, use `mutations` to see the individual reads/writes of external state.
+5. **Use mutations for side-effect analysis** — Before modifying a function, use `mutations` to understand what external state it accesses or modifies. This tells you what might break.
 
-6. **Use effect_summary for a categorized effect picture** — When you want the function's effects classified (reads, writes, raises, allocations, blocking calls, awaits) plus a purity verdict and an unresolved-call frontier, use `effect_summary`. It is the higher-level view over `mutations`: reach for `effect_summary` to answer "what does this touch, and is it pure?" before a change; drop to `mutations` for the raw access list.
+6. **Use control-flow for complex logic** — When a function is hard to understand, use `control_flow` to get a linearized view of its branching structure.
 
-7. **Use control-flow for complex logic** — When a function is hard to understand, use `control_flow` to get a linearized view of its branching structure.
+7. **Batch symbol retrieval** — When you need symbols from multiple files, use `symbols_batch --files` instead of making separate `symbols` calls. When you need specific implementations, use `symbols_batch --ids` with stable IDs.
 
-8. **Use data_flow to trace values through a function** — The dual of `control_flow`: `data_flow` returns variable definition sites, use sites, def→use edges, and the locals that flow into the return. Reach for it to answer "where does this value come from / where does it go" within one function.
+8. **Use stable symbol IDs** — After finding a symbol, use its stable ID (format: `file::QualifiedName#kind`) for subsequent operations. This avoids ambiguity and eliminates the need to specify `--file`.
 
-9. **Batch symbol retrieval** — When you need symbols from multiple files, use `symbols_batch --files` instead of making separate `symbols` calls. When you need specific implementations, use `symbols_batch --ids` with stable IDs.
+9. **Use definition for cross-file navigation** — When you find a reference to an unknown symbol, use `definition` to jump to its source.
 
-10. **Use stable symbol IDs** — After finding a symbol, use its stable ID (format: `file::QualifiedName#kind`) for subsequent operations. This avoids ambiguity and eliminates the need to specify `--file`.
-
-11. **Use definition for cross-file navigation** — When you find a reference to an unknown symbol, use `definition` to jump to its source.
-
-12. **Analyze before modifying** — Before making changes, run `effect_summary` (or `mutations`) on affected functions and `graph` on affected files to understand the blast radius.
+10. **Analyze before modifying** — Before making changes, run `mutations` on affected functions and `graph` on affected files to understand the blast radius.
 
 ## Token-Saving Hints
 
