@@ -15,8 +15,7 @@ format, and token budget rules.
 ## Artifact Directory Structure
 
 ```
-project-map.md                     # living STATE document at workspace root, tracked in git
-remediation-log.md                 # append-only ACTION ledger at workspace root, tracked in git
+project-map.md                     # living document at workspace root, tracked in git
 docs/act/
 └── <YYYY-MM-DD-HHMMSS>/          # timestamped run directory (gitignored)
     ├── manifest.json              # what was run, when, which tools, which skill
@@ -31,17 +30,8 @@ docs/act/
 ```
 
 `project-map.md` lives at the workspace root and is tracked in git — it is the durable
-living document, full-rewritten by the analysis skills each run. The `docs/act/` tree holds
-ephemeral timestamped reports and is gitignored. Timestamped subdirectories prevent collisions
-and enable trend comparison.
-
-`remediation-log.md` also lives at the workspace root and is tracked in git, but it is
-**append-only** and owned by the `architectural-refactoring` skill, not the analysis skills.
-It records *actions taken* (one row per verified remediation, keyed to a finding ID), as opposed
-to the map's *current state*. Keeping the two separate avoids two skills clobbering one file:
-refactoring appends to the log; analysis skills only **read** it (in Phase 0) and fold confirmed
-remediations into the map narrative. It must stay out of the gitignored `docs/act/<ts>/` tree so
-it survives as a durable record.
+living document. The `docs/act/` tree holds ephemeral timestamped reports and is
+gitignored. Timestamped subdirectories prevent collisions and enable trend comparison.
 
 ## Investigation Depth Levels
 
@@ -142,12 +132,6 @@ Every skill returns this brief summary to the calling agent (not the full report
 **Suggested next actions:** <specific skill or manual step>
 ```
 
-When confirmed structural findings warrant remediation, the suggested next action is to run the
-remediation skill that closes the cycle (for Architecture Audit: `architectural-refactoring`), not
-a cherry-picked inline fix — the skill records remediations to `remediation-log.md` and feeds the
-next audit. Recommend a one-off tool call or manual step only for work that falls outside a
-remediation pass.
-
 ## Token Budget Rules
 
 - Subagents protect the main context — raw tool output stays in subagents and on disk,
@@ -205,19 +189,7 @@ Trend direction if multiple runs exist (improving/stable/degrading).
 (Present only after Migration Assessment has run)
 Ready/needs-work/hard counts, recommended migration order summary.
 
-## Refuted & Re-characterized Findings
-Persistent ledger of hypotheses investigated and NOT confirmed (refuted / partially
-refuted / re-characterized) and tool outputs that are artifacts rather than findings.
-Carried forward every run; re-opened only on new contradicting evidence. Read first
-(before tool dispatch) so audits don't re-flag disproven smells.
-| Finding | Status | Since | Evidence / why |
-|---------|--------|-------|----------------|
-
 ## Analysis History
 | Date | Skill | Verdict | Report |
 |------|-------|---------|--------|
 ```
-
-Skills that run hypothesis-driven investigation (Architecture Audit, depth 2+) must read the
-Refuted & Re-characterized Findings ledger before dispatching tools and update it during
-synthesis. See each skill for its Phase 0 / Project Map Updates rules.

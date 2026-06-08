@@ -13,10 +13,7 @@
 - Exception: entry points (main, handlers, exports consumed by external packages)
 
 ### 3. Coupling Analysis
-- For modified public functions, run `callers` to assess blast radius (requires LSP)
-- When LSP is unavailable, use `analyze_impact` in symbol mode (Teams): `analyze_impact(target=<file>, symbol=<fn>)`
-  — syntactic-floor caller tracing, no LSP required. Append `::<line>` to `symbol` for overloads.
-- Review `confidence` (Syntactic vs. Resolved), `unresolved`, and `modeled_kinds` in the result
+- For modified public functions, run `callers` to assess blast radius
 - >10 callers = high coupling, changes here are risky
 - 0 callers on a public function = dead code candidate
 
