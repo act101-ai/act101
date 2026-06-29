@@ -3,26 +3,27 @@
 # Usage: curl -sSL https://act101.ai/install.sh | sh [-s -- <flags>]
 #
 # Flags:
-#   --accept-terms-of-service=<yes|no|ask>  TOS handling (default: ask)
 #   --enable-daemon=<yes|no|ask>            Daemon preference (default: ask)
 #   --auto-start=<yes|no|ask>               Auto-start preference (default: ask)
 #   --install-claude-plugin=<yes|no|ask>    Register with Claude Code (default: ask)
 #   --prefix=<path>                         Install prefix
 #   --version=<vX.Y.Z>                      Pin version
+#   --channel=<stable|beta>                 Update channel (default: stable)
 #   --dry-run                               Print what would happen, make no changes
 #   --debug                                 Verbose trace output (set -x)
 #
 # Environment variables (alternative to flags):
-#   ACT_ACCEPT_TOS, ACT_ENABLE_DAEMON, ACT_AUTO_START,
+#   ACT_ENABLE_DAEMON, ACT_AUTO_START,
 #   ACT_INSTALL_CLAUDE_PLUGIN, ACT_PREFIX, ACT_VERSION,
-#   ACT_DRY_RUN=1, ACT_DEBUG=1
+#   ACT_CHANNEL, ACT_DRY_RUN=1, ACT_DEBUG=1
 #
 # Uninstall:
 #   curl -sSL https://act101.ai/install.sh | sh -s uninstall
 
 # ACT_DEFAULT_VERSION is substituted at release time by the build-installers job.
-: "${ACT_DEFAULT_VERSION:=v1.0.25}"
+: "${ACT_DEFAULT_VERSION:=v2.0.0}"
 : "${ACT_GITHUB_REPO:=act101-ai/act101}"
+: "${ACT_CHANNEL:=stable}"
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -55,19 +56,14 @@ select_target() {
     esac
 }
 
-to_lower() {
-    printf '%s' "$1" | tr '[:upper:]' '[:lower:]'
+find_expected_sha() {
+    sums_file="$1"
+    asset="$2"
+    awk -v asset="$asset" '$2 == asset || $2 == "./" asset { print $1; exit }' "$sums_file"
 }
 
-parse_tos_value() {
-    v="${1:-ask}"
-    lv=$(to_lower "$v")
-    case "$lv" in
-        ""|ask) echo ask ;;
-        yes|accept|true|1|y) echo yes ;;
-        no|false|0|n) echo no ;;
-        *) echo "invalid TOS value: $v (use yes|no|ask)" >&2; return 1 ;;
-    esac
+to_lower() {
+    printf '%s' "$1" | tr '[:upper:]' '[:lower:]'
 }
 
 parse_tristate() {
@@ -78,6 +74,34 @@ parse_tristate() {
         yes|true|1|y) echo yes ;;
         no|false|0|n) echo no ;;
         *) echo "invalid value: $v (use yes|no|ask)" >&2; return 1 ;;
+    esac
+}
+
+resolve_version_for_channel() {
+    channel="$1"
+    repo="${ACT_GITHUB_REPO}"
+    case "$channel" in
+        ""|stable)
+            # /releases/latest skips prereleases automatically
+            curl -fsSL "https://api.github.com/repos/${repo}/releases/latest" \
+                | python3 -c "import json,sys; print(json.load(sys.stdin)['tag_name'])"
+            ;;
+        *)
+            # Beta or other: scan releases list for first matching prerelease
+            python3 - "$channel" "$repo" <<'PYEOF'
+import json, sys, urllib.request
+channel, repo = sys.argv[1], sys.argv[2]
+url = f"https://api.github.com/repos/{repo}/releases?per_page=20"
+with urllib.request.urlopen(url) as r:
+    releases = json.load(r)
+for rel in releases:
+    if rel.get("prerelease") and not rel.get("draft") and channel in rel["tag_name"]:
+        print(rel["tag_name"])
+        sys.exit(0)
+sys.stderr.write(f"No {channel} release found in {repo}\n")
+sys.exit(1)
+PYEOF
+            ;;
     esac
 }
 
@@ -126,10 +150,6 @@ random_triplet() {
         INSTALL_1) echo "actually:configuring:things" ;;
         INSTALL_2) echo "aggressively:claiming:territory" ;;
         INSTALL_3) echo "adding:capabilities:though" ;;
-        TOS_0) echo "attorneys:crafted:this" ;;
-        TOS_1) echo "acknowledging:conditions:transparently" ;;
-        TOS_2) echo "anxiously:consenting:though" ;;
-        TOS_3) echo "accepting:conditions:thoughtfully" ;;
         REGISTER_0) echo "attaching:claude:tools" ;;
         REGISTER_1) echo "augmenting:coding:talent" ;;
         REGISTER_2) echo "agents:cooperating:today" ;;
@@ -262,7 +282,6 @@ set -eu
 # ---------------------------------------------------------------------------
 # Argument parsing
 # ---------------------------------------------------------------------------
-TOS="${ACT_ACCEPT_TOS:-}"
 DAEMON="${ACT_ENABLE_DAEMON:-}"
 AUTOSTART="${ACT_AUTO_START:-}"
 CLAUDE_PLUGIN="${ACT_INSTALL_CLAUDE_PLUGIN:-}"
@@ -274,12 +293,12 @@ MODE="install"
 for arg in "$@"; do
     case "$arg" in
         uninstall) MODE="uninstall" ;;
-        --accept-terms-of-service=*) TOS="${arg#*=}" ;;
         --enable-daemon=*) DAEMON="${arg#*=}" ;;
         --auto-start=*) AUTOSTART="${arg#*=}" ;;
         --install-claude-plugin=*) CLAUDE_PLUGIN="${arg#*=}" ;;
         --prefix=*) PREFIX="${arg#*=}" ;;
         --version=*) VERSION="${arg#*=}" ;;
+        --channel=*) ACT_CHANNEL="${arg#*=}" ;;
         --dry-run) DRY_RUN=1 ;;
         --debug) ACT_DEBUG=1 ;;
         --help|-h)
@@ -292,8 +311,8 @@ for arg in "$@"; do
                 cat <<'USAGE'
 act installer. See https://act101.ai/install.sh
 Flags: --dry-run, --debug, --prefix=PATH, --version=vX.Y.Z,
-       --accept-terms-of-service=<yes|no|ask>, --enable-daemon=<yes|no|ask>,
-       --auto-start=<yes|no|ask>, --install-claude-plugin=<yes|no|ask>
+       --enable-daemon=<yes|no|ask>, --auto-start=<yes|no|ask>,
+       --install-claude-plugin=<yes|no|ask>
 USAGE
             exit 0 ;;
         *) echo "unknown argument: $arg" >&2; exit 2 ;;
@@ -304,7 +323,6 @@ if [ -n "${ACT_DEBUG:-}" ]; then
     set -x
 fi
 
-TOS=$(parse_tos_value "$TOS")
 DAEMON=$(parse_tristate "$DAEMON")
 AUTOSTART=$(parse_tristate "$AUTOSTART")
 CLAUDE_PLUGIN=$(parse_tristate "$CLAUDE_PLUGIN")
@@ -331,10 +349,10 @@ if [ -n "${DRY_RUN:-}" ]; then
   prefix:        $PREFIX
   config dir:    $CONFIG_DIR
   config file:   $CONFIG_FILE
-  tos:           $TOS
   daemon:        $DAEMON
   auto-start:    $AUTOSTART
   claude-plugin: $CLAUDE_PLUGIN
+  channel:       $ACT_CHANNEL
   version:       ${VERSION:-$ACT_DEFAULT_VERSION}
   github repo:   $ACT_GITHUB_REPO
 
@@ -359,8 +377,10 @@ fi
 # ---------------------------------------------------------------------------
 if [ -z "$VERSION" ]; then VERSION="$ACT_DEFAULT_VERSION"; fi
 if [ "$VERSION" = latest ]; then
-    VERSION=$(curl -fsSL "https://api.github.com/repos/$ACT_GITHUB_REPO/releases/latest" \
-        | grep -E '"tag_name"' | head -1 | sed -E 's/.*"(v?[^"]+)".*/\1/')
+    VERSION=$(resolve_version_for_channel "$ACT_CHANNEL") || {
+        echo "Failed to resolve version for channel: $ACT_CHANNEL" >&2
+        exit 1
+    }
     case "$VERSION" in v*) : ;; *) VERSION="v$VERSION" ;; esac
 fi
 VER_NO_V="${VERSION#v}"
@@ -383,7 +403,7 @@ else
     run_cmd curl -fSL -o "$TMPDIR/SHA256SUMS.txt" "$BASE/SHA256SUMS.txt"
     act_step "DOWNLOAD" "$ASSET"
 
-    EXPECTED=$(grep " $ASSET$" "$TMPDIR/SHA256SUMS.txt" | awk '{print $1}')
+    EXPECTED=$(find_expected_sha "$TMPDIR/SHA256SUMS.txt" "$ASSET")
     if command -v sha256sum >/dev/null 2>&1; then
         ACTUAL=$(sha256sum "$TMPDIR/$ASSET" | awk '{print $1}')
     elif command -v shasum >/dev/null 2>&1; then
@@ -422,6 +442,16 @@ enable_daemon = \"$DAEMON\"
 auto_start = \"$AUTOSTART\"
 "
 
+# Persist the channel so auto-update stays on the chosen channel.
+# Omit the [update] section entirely for the default stable channel —
+# act treats a missing/empty channel field as stable (backward-compatible).
+if [ "${ACT_CHANNEL:-stable}" != "stable" ] && [ -n "${ACT_CHANNEL:-}" ]; then
+    INSTALL_TOML_CONTENT="${INSTALL_TOML_CONTENT}
+[update]
+channel = \"${ACT_CHANNEL}\"
+"
+fi
+
 if [ -n "${DRY_RUN:-}" ]; then
     echo
     echo "  Would write $CONFIG_FILE:"
@@ -432,44 +462,10 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# TOS handling
+# Host detection + registration
 # ---------------------------------------------------------------------------
 HAS_TTY=0; [ -t 0 ] && HAS_TTY=1
 ACT_BIN="$PREFIX/act"
-
-accept_tos_now() {
-    if [ -n "${DRY_RUN:-}" ]; then
-        echo "  Would run: $ACT_BIN tos accept --yes"
-        act_step "TOS" "✓ (dry-run)"
-    else
-        run_cmd "$ACT_BIN" tos accept --yes 2>/dev/null || true
-        act_step "TOS" "✓"
-    fi
-}
-
-case "$TOS" in
-    yes) accept_tos_now ;;
-    no)  echo "  Terms: https://act101.ai/terms (not yet accepted)" ;;
-    ask)
-        if [ "$HAS_TTY" = 1 ]; then
-            printf "\n  Terms of service: %shttps://act101.ai/terms%s\n" "$WHITE" "$RESET"
-            printf "  Accept? [Y/n] "
-            reply=""
-            read -r reply </dev/tty 2>/dev/null || reply=""
-            reply=$(to_lower "$reply")
-            case "$reply" in
-                ""|y|yes) accept_tos_now ;;
-                *) echo "  TOS declined; install aborted"; exit 1 ;;
-            esac
-        else
-            echo "  Terms: https://act101.ai/terms (run 'act tos accept' before first use)"
-        fi
-        ;;
-esac
-
-# ---------------------------------------------------------------------------
-# Host detection + registration
-# ---------------------------------------------------------------------------
 DETECTED=$(detect_hosts)
 
 for host in $DETECTED; do

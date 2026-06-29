@@ -1,8 +1,8 @@
 {
   "mcpServers": {
     "act101": {
-      "command": "node",
-      "args": ["bin/act.js", "mcp", "serve"],
+      "command": "act",
+      "args": ["mcp", "serve"],
       "env": {
         "ACT_LOG_LEVEL": "warn"
       }
