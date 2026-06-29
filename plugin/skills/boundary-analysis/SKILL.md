@@ -31,6 +31,11 @@ structured summary.
 
 If both must-have tools are unavailable, report that and stop.
 
+Interpret `analyze_seams` through `analyze_clusters`. Empty seams are actionable only
+when clustering produced at least two non-hub clusters. If clustering is hub-collapsed
+or collapsed into one cluster, treat seam output as uninformative and investigate with
+dampened clusters, `split_module`, `analyze_surface`, or `simulate`.
+
 **Extended tools (use if available, skip and note in manifest if not):**
 
 | Tool | Purpose | MCP call |
@@ -68,9 +73,15 @@ For each significant finding, form a hypothesis before dispatching a subagent:
 > **Hypothesis N:** `<file>` contains two distinct concept clusters that should be
 > separate modules.
 > **Evidence:** `analyze_cohesion` scored this module low; it is large.
-> **Confirming query:** `skeleton` on the file to find concept clusters.
-> **Confirms if:** Skeleton reveals two distinct groups of functions with no shared state.
-> **Refutes if:** Functions share common state/types — low cohesion score is misleading.
+> **Confirming query:** Read the `analyze_cohesion` LCOM4 fields. For any class with
+> `lcom4` ≥ 2, its `components` are the disjoint method/field clusters — the NAMED split
+> boundary, preferred over eyeballing the `skeleton`. Cross-check the `lcom4_summary`
+> `modeled_kinds` for coverage honesty: a grammar absent from `modeled_kinds` is unjudged,
+> not cohesive.
+> **Confirms if:** A class reports `lcom4` ≥ 2 and its `components` partition the methods
+> into groups with no shared state — split along those clusters.
+> **Refutes if:** `lcom4` is 1 (methods share common state/fields), or the file's grammar
+> is absent from `modeled_kinds` so cohesion was never judged.
 
 **Interface bloat hypothesis example:**
 > **Hypothesis N:** `<module>`'s public API is wider than necessary — some exports are
@@ -122,13 +133,43 @@ Per-orphan: where defined, where used, recommended move destination.
 
 ## Cohesion Assessment
 (Present only if analyze_cohesion ran successfully.)
-Low-cohesion modules with natural split points identified from skeleton investigation.
-Per-module: cohesion score, identified split boundary, recommended next step.
+Low-cohesion modules with natural split points. Per-module: cohesion score, identified
+split boundary, recommended next step.
+For each class with `lcom4` ≥ 2, report its `components` (the disjoint method/field
+clusters) as the named split boundary — this is the LCOM4 evidence, preferred over an
+eyeballed skeleton read. Quote the `lcom4_summary` `modeled_kinds` so coverage is honest:
+a grammar absent from `modeled_kinds` was never judged and must not be reported as cohesive.
 
 ## Recommended Decomposition Steps
 Prioritized, ordered steps to improve module boundaries.
 Each step links to a specific act MCP tool call or skill.
 Order: cheapest/highest-value extractions first, invasive restructuring last.
+
+Before committing to a cut, simulate it. Express the proposed cut as `simulate` ops —
+`split_file{file,groups}` for a class/module split, `move_file{from,to}` for a relocation —
+and record the predicted deltas: `cycles.resolved`/`cycles.introduced`, the `coupling`
+changes, `chokepoints`, and conformance `violations.cleared`/`violations.introduced` (the
+last only when an `[architecture]` contract exists in `.act/config.toml`). `simulate` never
+writes disk. Revise the cut if it introduces violations or fails to resolve the target cycle.
+(Delta-field names match the architectural-refactoring skill's simulate step.)
+
+To decide whether a suspected pass-through module is a real boundary at all — the
+deletion test — simulate `delete_module{file}`. It drops the module and re-wires
+transitive bridges (`A→M→B` ⇒ `A→B`), then reports a `deletions` delta. Read it in
+this order:
+
+1. `surface_consumers` — external symbols that **call or extend the module's own
+   symbols** (the load-bearing core; `top_consumers` names them). A non-zero count
+   means the module is load-bearing and earns its keep — those dependencies can
+   never be re-homed because the callee/superclass body is deleted. Cite the count
+   and a name or two instead of arguing the deletion test in prose.
+2. `surface_modeled` — **honesty gate.** `surface_consumers: 0` is a genuine
+   conduit signal ONLY when this is `true`. When `false` the call channel was not
+   modeled for the module's grammar; the verdict is UNKNOWN, never "clean conduit"
+   (field-access consumption is not modeled at all — treat 0 with care).
+3. `rewired_edges` / `severed_edges` — the file-import routing side: high
+   `rewired_edges` with `severed_edges: 0` and `surface_consumers: 0` (modeled) is
+   a clean pass-through whose callers only routed through it.
 ```
 
 ## Project Map Updates

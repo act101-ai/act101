@@ -7,18 +7,15 @@ grammars — ~85% fewer tokens than file-based operations (benchmark average).
 This repository is the **public distribution point** for `act101`: plugin
 files for the [Claude Code](https://claude.ai/code),
 [Codex](https://developers.openai.com/codex), and
-[Cursor](https://cursor.com) marketplaces and pre-built
-binaries for every supported platform.
+[Cursor](https://cursor.com) marketplaces, the Zed extension, and
+pre-built binaries for every supported platform.
 
 ---
 
 ## What's new
 
-### v1.0.23 
-- Various bugfixes
-
-### v1.0.22
-- Various bugfixes
+### v1.0.25 
+- Fixed license key edge case
 
 ### v1.0.21
 - Claude Code: fixed marketplace install (`claude plugin marketplace add act101-ai/act101`)
@@ -34,8 +31,8 @@ Full release history in [CHANGELOG.md](https://github.com/act101-ai/act101/blob/
 ## Install
 
 All install paths produce a single dependency-free native executable. 
-The recommended path is the shell installer — it handles binary download, 
-Terms of Service, and optionally wires the Claude Code plugin in one step.
+The recommended path is the shell installer — it handles binary download
+and optionally wires the Claude Code plugin in one step.
 
 ### 1. Shell installer (Linux, macOS) — recommended
 
@@ -44,12 +41,11 @@ curl -sSL https://raw.githubusercontent.com/act101-ai/act101/main/install.sh | s
 ```
 
 The installer downloads the matching binary for your platform, verifies
-it against `SHA256SUMS.txt`, places it on your `PATH`, walks the
-Terms of Service, and offers to register it with Claude Code.
+it against `SHA256SUMS.txt`, places it on your `PATH`, and offers to
+register it with Claude Code.
 
 Non-interactive flags (pass after `sh -s --`):
 
-- `--accept-terms-of-service=yes` — accept TOS non-interactively.
 - `--install-claude-plugin=<yes|no|ask>` — control Claude Code plugin
   registration. Default is `ask` in interactive shells, `no` otherwise.
 - `--prefix=<dir>` — install prefix (defaults to `/usr/local/bin` as
@@ -73,7 +69,7 @@ irm https://raw.githubusercontent.com/act101-ai/act101/main/install.ps1 | iex
 Non-interactive:
 
 ```powershell
-iex "& { $(irm https://raw.githubusercontent.com/act101-ai/act101/main/install.ps1) } -AcceptTermsOfService yes -InstallClaudePlugin yes"
+iex "& { $(irm https://raw.githubusercontent.com/act101-ai/act101/main/install.ps1) } -InstallClaudePlugin yes"
 ```
 
 ### 3. Claude Code marketplace (if you already have `act` on `PATH`)
@@ -87,10 +83,9 @@ claude plugin marketplace add act101-ai/act101
 claude plugin install act101@act101-marketplace
 ```
 
-On first session start the plugin's launcher locates the `act` binary
-already on your `PATH` (version-matched). If none is present it falls
-back to downloading one under `${CLAUDE_PLUGIN_DATA}/bin`. Node 18+ on
-`PATH` is required for the launcher either way.
+The plugin starts `act mcp serve` using the `act` binary already on
+your `PATH`. Install or update the binary with the shell installer,
+Homebrew, or a manual release download before installing the plugin.
 
 Tool list and skills are described in `plugin/README.md`.
 
@@ -110,9 +105,8 @@ select **act101** → **Install plugin**. Codex 0.124.0 has no
 non-interactive install verb yet; the slash command is the install
 action.
 
-The same launcher and binary-resolution rules from §3 apply. Codex does
-not pre-warm the binary at session start, so the first MCP call after a
-fresh install pays a one-time download cost if no `act` is on `PATH`.
+The Codex plugin starts `act mcp serve` using the `act` binary already
+on your `PATH`; it does not download or cache its own binary.
 
 ### 5. opencode (if you already have `act` on `PATH`)
 
@@ -161,7 +155,14 @@ To remove:
 act uninstall cursor
 ```
 
-### 7. Manual download
+### 7. Zed (if you already have `act` on `PATH`)
+
+Install `act` first with the shell installer, Homebrew, or a manual
+release download. The Zed extension starts `act mcp serve` using the
+`act` binary already on your `PATH`; it does not download or cache its
+own binary.
+
+### 8. Manual download
 
 Grab the archive for your platform from the
 [latest release](https://github.com/act101-ai/act101/releases/latest),
@@ -192,23 +193,6 @@ install -m 755 act ~/.local/bin/act
 The Linux musl build is statically linked and has no libc version
 requirement — use it if you see `GLIBC_X.YY not found` from the glibc
 build.
-
----
-
-## First-run Terms of Service
-
-`act` requires one-time Terms of Service acceptance before any tool
-runs. The shell installer walks you through it. Outside the installer,
-accept from a terminal:
-
-```bash
-act tos show     # read the terms
-act tos accept   # record acceptance
-```
-
-Under the Claude Code plugin, the MCP server always starts but gates
-every tool behind the TOS. Use the `tos_show` and `tos_accept` tools —
-Claude Code's standard tool-consent UI is the acceptance surface.
 
 ---
 

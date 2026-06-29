@@ -1,12 +1,8 @@
 # act installer for Windows (PowerShell 5+).
 # Usage: irm https://act101.ai/install.ps1 | iex
-# With flags:
-#   iex "& { $(irm https://act101.ai/install.ps1) } -AcceptTermsOfService yes"
 
 [CmdletBinding()]
 param(
-    [ValidateSet("yes","accept","true","1","y","no","false","0","n","ask","")]
-    [string]$AcceptTermsOfService = "",
     [ValidateSet("yes","no","ask","")]
     [string]$EnableDaemon = "",
     [ValidateSet("yes","no","ask","")]
@@ -34,7 +30,6 @@ $TripletSets = @{
     DOWNLOAD = @("arduously:collecting:things","anxiously:counting:tokens","acquiring:compressed:tarball","another:cool:tool")
     VERIFY = @("absolutely:checking:that","assessing:cryptographic:truth","anxiously:confirming:things","authenticating:content:trustworthiness")
     INSTALL = @("assembling:cool:tools","actually:configuring:things","aggressively:claiming:territory","adding:capabilities:though")
-    TOS = @("attorneys:crafted:this","acknowledging:conditions:transparently","anxiously:consenting:though","accepting:conditions:thoughtfully")
     REGISTER = @("attaching:claude:tools","augmenting:coding:talent","agents:cooperating:today","anxiously:connecting:things")
 }
 
@@ -88,7 +83,7 @@ function Find-Hosts {
 }
 
 # ACT_DEFAULT_VERSION is substituted at release time
-$DefaultVersion = if ($env:ACT_VERSION) { $env:ACT_VERSION } else { "v1.0.25" }
+$DefaultVersion = if ($env:ACT_VERSION) { $env:ACT_VERSION } else { "latest" }
 $Repo = if ($env:ACT_GITHUB_REPO) { $env:ACT_GITHUB_REPO } else { "act101-ai/act101" }
 
 function Resolve-Tristate([string]$v, [string]$default = "ask") {
@@ -114,7 +109,18 @@ function Select-Target([string]$arch) {
     throw "unsupported arch: $arch"
 }
 
-$Tos = Resolve-Tristate $AcceptTermsOfService $(if ($env:ACT_ACCEPT_TOS) { $env:ACT_ACCEPT_TOS } else { "ask" })
+function Find-ExpectedSha([string]$sumsPath, [string]$asset) {
+    $expectedLine = Get-Content $sumsPath |
+        Where-Object {
+            $parts = $_ -split '\s+', 2
+            $parts.Length -eq 2 -and ($parts[1] -eq $asset -or $parts[1] -eq "./$asset")
+        } |
+        Select-Object -First 1
+
+    if (-not $expectedLine) { return "" }
+    return ($expectedLine -split '\s+', 2)[0]
+}
+
 $Daemon = Resolve-Tristate $EnableDaemon $(if ($env:ACT_ENABLE_DAEMON) { $env:ACT_ENABLE_DAEMON } else { "ask" })
 $AutoS = Resolve-Tristate $AutoStart $(if ($env:ACT_AUTO_START) { $env:ACT_AUTO_START } else { "ask" })
 $ClaudePlugin = Resolve-Tristate $InstallClaudePlugin $(if ($env:ACT_INSTALL_CLAUDE_PLUGIN) { $env:ACT_INSTALL_CLAUDE_PLUGIN } else { "ask" })
@@ -158,10 +164,7 @@ Invoke-WebRequest -UseBasicParsing -Uri "$Base/$Asset" -OutFile (Join-Path $Tmp 
 Invoke-WebRequest -UseBasicParsing -Uri "$Base/SHA256SUMS.txt" -OutFile (Join-Path $Tmp "SHA256SUMS.txt")
 Write-ActStep "DOWNLOAD" $Asset
 
-$AssetPattern = "  " + [regex]::Escape($Asset) + "$"
-$Expected = (Get-Content (Join-Path $Tmp "SHA256SUMS.txt") |
-    Where-Object { $_ -match $AssetPattern } |
-    Select-Object -First 1) -split ' ' | Select-Object -First 1
+$Expected = Find-ExpectedSha (Join-Path $Tmp "SHA256SUMS.txt") $Asset
 $Actual = (Get-FileHash -Algorithm SHA256 (Join-Path $Tmp $Asset)).Hash.ToLower()
 
 if (-not $Expected -or $Expected -ne $Actual) {
@@ -196,35 +199,10 @@ auto_start = "$AutoS"
 "@
 Set-Content -Path $ConfigFile -Value $TomlContent -Encoding UTF8
 
-# TOS handling
-$HasTty = [Environment]::UserInteractive
-switch ($Tos) {
-    "yes" {
-        & $BinPath tos accept --yes 2>$null
-        Write-ActStep "TOS" "✓"
-    }
-    "no" { Write-Host "  Terms: https://act101.ai/terms (not yet accepted)" }
-    "ask" {
-        if ($HasTty) {
-            Write-Host ""
-            Write-Wht "  Terms of service: "; Write-Host "https://act101.ai/terms"
-            $reply = Read-Host "  Accept? [Y/n]"
-            if (-not $reply -or $reply.ToLower() -in @("y","yes")) {
-                & $BinPath tos accept --yes 2>$null
-                Write-ActStep "TOS" "✓"
-            } else {
-                Write-Host "  TOS declined; install aborted"
-                exit 1
-            }
-        } else {
-            Write-Host "  Terms: https://act101.ai/terms (run '$BinPath tos accept' before first use)"
-        }
-    }
-}
-
 Remove-Item -Recurse -Force $Tmp
 
 # --- Host detection ---
+$HasTty = [Environment]::UserInteractive
 $DetectedHosts = Find-Hosts
 
 foreach ($h in $DetectedHosts) {

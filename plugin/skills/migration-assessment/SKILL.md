@@ -5,6 +5,9 @@ description: >
   understanding what makes this codebase hard to rewrite, or requesting "how ready
   is this for porting?". Depth 2 — investigate. Produces per-module readiness cards,
   recommended migration order, hard/soft blocker list, and platform dependency assessment.
+  Optionally enriches the plan with security and history evidence (taint flow, secret
+  surface, unsafe constructs, coverage, churn, ownership) so blockers reflect real
+  porting risk, not structure alone. Replaces the migration-readiness-plus skill.
 ---
 
 # Migration Assessment
@@ -121,3 +124,67 @@ For each top-level module:
 
 Appends or updates the **"Migration Readiness"** section. Appends to the Analysis
 History table.
+
+## Optional Enrichment: Security & History Evidence
+
+The readiness scores above are structural/heuristic. When the workspace has the
+relevant evidence, enrich the plan so the recommended migration order reflects real
+porting risk — code that is hard to port AND dangerous AND historically volatile —
+not just structural readiness. This is optional: skip any dimension whose evidence
+or tier is unavailable and mark it UNASSESSED (never a clean bill).
+
+**Tier:** composed tools enforce their own tiers — `unsafe_surface` Free,
+`secret_surface` Engineer, `taint_flow`/`coverage_overlay`/`ownership_map` Architecture,
+`churn_hotspots` Free for a single file / Architecture in workspace mode. If a tool is
+tier-blocked, its dimension is UNASSESSED — say so.
+
+**Honesty caveat:** `taint_flow`/`secret_surface`/`unsafe_surface` report
+`modeled_kinds` — read it per call. A non-empty mask means the dimension *was*
+modeled for that grammar (an empty finding is then genuine); an empty/absent mask
+means it was *not* modeled — "no evidence," not "clean." `coverage_overlay`/
+`churn_hotspots`/`ownership_map` reflect one coverage run and the git history
+present; state the window and `unmapped`.
+
+| Tool | Enriches the plan with |
+|---|---|
+| `taint_flow` | Source→sink data-flow paths a port must preserve exactly — a hard porting hazard. |
+| `secret_surface` | Secret-touching code needing careful handling / rotation during the move. |
+| `unsafe_surface` | Unsafe blocks, eval, raw SQL, FFI, reflection, unsafe deserialization — rarely port 1:1. |
+| `coverage_overlay` | Which modules have a test safety net for the port vs. which are flying blind. |
+| `churn_hotspots` | Volatile modules — porting a still-changing target is a moving-target risk. |
+| `ownership_map` | Bus factor — low ownership on a hard module concentrates the knowledge to port it. |
+
+**Enrichment workflow (after the structural plan):**
+
+1. Run `unsafe_surface` and `secret_surface` per module; run `taint_flow` on entry
+   functions. Any unsafe construct, secret surface, or live taint path raises that
+   module's effective difficulty above its structural score.
+2. `coverage_overlay` (lcov `report`) — a low-coverage module cannot be safely
+   verified after porting; front-load test work or reorder.
+3. `churn_hotspots` (workspace) and `ownership_map` — a high-churn or low-bus-factor
+   module is a scheduling risk: stabilize or pair-port it.
+4. Recompute the order: structurally-ready AND well-tested AND low-risk first; hard +
+   dangerous + volatile last (or split first). Reclassify any soft blocker that an
+   unsafe/taint/secret finding promotes to a hard blocker.
+
+When enrichment runs, each readiness card adds: taint paths, secret/unsafe hits,
+coverage %, churn rank, and bus factor — and each blocker cites which evidence
+dimension fired.
+
+## Monorepos: frame readiness cards by package, not directory
+
+When the repo is a workspace with package manifests, run the structural pass at
+**package granularity** so readiness cards map to the team's real packages
+(workspace members), not arbitrary directories:
+
+- `analyze_clusters` and `analyze_layers` with `granularity: package` cluster and
+  layer the package dependency graph (`DependsOn` edges parsed from manifests),
+  giving the true cross-package porting order — port a package only after the
+  packages it depends on.
+- `analyze_conformance` with `granularity: package` evaluates deny rules against
+  package names, so a "don't let package X depend on Y" boundary is checked at
+  the level the team actually reasons about.
+
+Which manifest kinds were modeled is reported from the graph's package nodes
+(empty when none) — never assume an ecosystem is covered; read what was modeled.
+Fall back to file/directory granularity when no workspace manifest is present.
