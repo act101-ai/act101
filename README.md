@@ -14,15 +14,17 @@ pre-built binaries for every supported platform.
 
 ## What's new
 
-### v1.0.25 
-- Fixed license key edge case
+### v2.0.0.1 
+- Fixed act101 online authentication.
 
-### v1.0.21
-- Claude Code: fixed marketplace install (`claude plugin marketplace add act101-ai/act101`)
-- Codex: fixed marketplace install (`codex plugin marketplace add act101-ai/act101`)
-- Cursor: added plugin manifest, `act install cursor`, and one-click "Add to Cursor" deeplink
-- Windsurf: added MCP auto-registration (`act install windsurf`)
-- Zed: added extension (`zed-extension/`)
+### v2.0.0
+- act101 online launched on github with architectural and security analysis
+  - Public repo scanning free forever. Sign up https://act101.ai/online
+  - Free private repo scan, full product coming soon to GitHub Marketplace
+- Updated quality suite with new analysis operations
+- Full Tier 2 language support for all Elite languages
+- Ran the act101 quality loop on act101 (Thanks Fable!)
+- Added act101 leaderboard at https://leaders.act101.ai/ enroll using `act arena enroll`
 
 Full release history in [CHANGELOG.md](https://github.com/act101-ai/act101/blob/main/CHANGELOG.md).
 
