@@ -14,7 +14,10 @@ pre-built binaries for every supported platform.
 
 ## What's new
 
-### v2.0.0.1 
+### v2.0.2
+- Full CLI support for all operations.
+
+### v2.0.1
 - Fixed act101 online authentication.
 
 ### v2.0.0
@@ -205,14 +208,54 @@ key, no account, no expiration. All query tools, all core languages,
 rename, fix-auto, and three analysis tools — included permanently.
 
 The free tier is a complete navigation and token-efficiency tool, not
-a time-limited trial. Paid tiers (Pro, Teams, Enterprise) unlock
-additional mutations, analysis tools, premium languages, and commercial
-use. See [pricing](https://act101.ai/pricing) for details.
+a time-limited trial. Paid editions (Engineering, Architecture, Elite,
+Enterprise) unlock additional refactors, analysis tools, premium
+languages, and commercial use. See [pricing](https://act101.ai/pricing)
+for details.
 
 ### Planned (not yet wired)
 
 - **OAuth registration** for license management — `act login` will open a
   browser-based flow tied to an account.
+
+---
+
+## CLI
+
+`act` is a single binary exposing code navigation, refactoring, analysis,
+verification, and porting. Every command answers `--help`; paid operations
+name their edition in the help text. Run `act docs` for the full generated
+reference, or browse [/docs/](https://act101.ai/docs/).
+
+| Command | What it does |
+|---------|--------------|
+| `act query` | Read code structure, references, diagnostics, types (19 query types) |
+| `act inspect` | Discover available actions at a location |
+| `act refactor` | Semantic code transformations (180+ operations; e.g. `act refactor extract-variable`) |
+| `act insert` | Add new code at AST-aware locations (`act insert body`) |
+| `act fix` | Apply quick fixes from diagnostics |
+| `act history` | Undo, redo, list checkpoints |
+| `act analyze` | Structural analysis: patterns, coupling, cycles, dead-code, hotspots, … |
+| `act gate` | Merge verdict over a diff: MERGE / REVIEW / BLOCK per changed function |
+| `act scan` | AI-code security scan + health score |
+| `act port` | Cross-language porting: contract, inventory, ordering, manifest |
+| `act mcp` | Run the MCP server (stdio or HTTP/HTTPS) for agent integration |
+| `act docs` | Emit language + tool documentation (markdown, html, or json) |
+| `act license` | Activate, status, trial; `act update` / `act completions` also available |
+
+Discover the surface programmatically:
+
+```bash
+act --list-commands      # every top-level command (JSON)
+act --list-operations    # every refactor op + its tier + MCP tool name (JSON)
+act catalog              # grammars + operations + per-op tier/CLI/MCP metadata (JSON)
+act status               # detected languages, LSP readiness, available tools
+```
+
+Operations gated above the free **Builder** edition are annotated in `--help`
+with their edition — `(Engineering edition)`, `(Architecture edition)`,
+`(Elite edition)`, or `(Enterprise edition)`. See
+[pricing](https://act101.ai/pricing) for what each edition includes.
 
 ---
 
@@ -229,14 +272,14 @@ use. See [pricing](https://act101.ai/pricing) for details.
   something behaves unexpectedly.
 - **`act diagnostics`** returns LSP errors/warnings without running a
   build. Scope by passing a directory or file.
-- **Refactor previews are cheap.** Every refactor (`rename`,
-  `extract_function`, `move_symbol`, `inline`, …) supports
-  `preview: true` — inspect the change set before it touches disk.
+- **Refactor previews are cheap.** Every refactor (`act refactor rename`,
+  `act refactor extract-function`, `act refactor move`, `act refactor inline`, …)
+  accepts `--preview` (the default) — inspect the change set before it touches disk.
 - **Undo is one call.** `act history undo` reverses the last
   refactor. `act history list` shows what's reversible.
 - **LSP is optional.** Single-file refactors (rename-in-file,
-  extract-variable, etc.) work without an LSP. Cross-file operations
-  (rename-across-repo, move, find-references) benefit from one.
+  `act refactor extract-variable`, etc.) work without an LSP. Cross-file operations
+  (rename-across-repo, `act refactor move`, find-references) benefit from one.
 - **Set `ACT_LOG_LEVEL=debug`** when diagnosing plugin or MCP issues;
   logs go to stderr and don't interfere with MCP stdout.
 
