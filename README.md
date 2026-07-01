@@ -1,43 +1,78 @@
-# act101
+# act101 — Analyze. Act. Attest.
 
-**AST-aware code transformer for AI coding agents.** providing code navigation,
-refactoring, and analysis operations across 160+ languages and representational
-grammars — ~85% fewer tokens than file-based operations (benchmark average).
+> **An LLM editing your code is a guess. act101 turns it into a transform — with a receipt and one-command rollback.**
 
-This repository is the **public distribution point** for `act101`: plugin
-files for the [Claude Code](https://claude.ai/code),
-[Codex](https://developers.openai.com/codex), and
-[Cursor](https://cursor.com) marketplaces, the Zed extension, and
-pre-built binaries for every supported platform.
+act101 is an AST-aware code transformer built for AI coding agents. It gives your
+agent precise navigation and refactoring across **163 languages and representational
+grammars**, then **proves each change preserved behavior before it can merge** — using
+roughly **85% fewer tokens** than reading and editing files directly (benchmark average).
+
+One native binary. One MCP server. Works in **Claude Code**, **Cursor**, **Codex**,
+**Zed**, and **opencode**.
+
+<p align="left">
+  <a href="#install"><b>⬇️  Install free</b></a> &nbsp;·&nbsp;
+  <a href="https://act101.ai/online"><b>🔍  Scan your repo free →</b></a> &nbsp;·&nbsp;
+  <a href="https://act101.ai/pricing"><b>Pricing</b></a> &nbsp;·&nbsp;
+  <a href="https://act101.ai"><b>act101.ai</b></a>
+</p>
+
+This repository is the **public distribution point** for act101: plugin files for the
+[Claude Code](https://claude.ai/code), [Codex](https://developers.openai.com/codex),
+and [Cursor](https://cursor.com) marketplaces, the Zed extension, and pre-built binaries
+for every supported platform.
 
 ---
 
-## What's new
+## Why act101
 
-### v2.0.2
-- Full CLI support for all operations.
+AI agents write plausible code fast — and plausible-but-wrong code just as fast. Reading
+whole files to reason about a change burns tokens; find-and-replace edits silently break
+callers. act101 replaces both with structure-aware operations and a verification gate:
 
-### v2.0.1
-- Fixed act101 online authentication.
+- **Analyze** — map an unfamiliar codebase without reading it. `act skeleton` returns a
+  file's API (signatures, types, exports) at ~5–10× fewer tokens than the raw file;
+  **33 analyzers** surface coupling, cycles, dead code, hotspots, test gaps, and porting
+  readiness.
+- **Act** — **182 refactoring operations** across **163 grammars**: rename, extract,
+  inline, move, split, convert, generate — every reference updated across the repo, with
+  a cheap `--preview` and one-command `act history undo`.
+- **Attest** — before a change merges, `act gate` runs the tests that reach it, diffs
+  the function contract and observable side effects, and emits a signed receipt. Pass →
+  merge with rollback armed. Fail → blocked, with the exact check that failed.
 
-### v2.0.0
-- act101 online launched on github with architectural and security analysis
-  - Public repo scanning free forever. Sign up https://act101.ai/online
-  - Free private repo scan, full product coming soon to GitHub Marketplace
-- Updated quality suite with new analysis operations
-- Full Tier 2 language support for all Elite languages
-- Ran the act101 quality loop on act101 (Thanks Fable!)
-- Added act101 leaderboard at https://leaders.act101.ai/ enroll using `act arena enroll`
+```text
+act gate · refactor verified   fn computeTotal()   src/cart.ts
+──────────────────────────────────────────────────────────────
+  behavioral diff (3 tests reaching change)      PRESERVED
+  contract (signatures / declared effects)       PRESERVED
+  side-effects (I/O, globals, hidden state)      CLEAN
+──────────────────────────────────────────────────────────────
+  VERDICT  ✓ MERGE      checkpoint + rollback ready
+```
 
-Full release history in [CHANGELOG.md](https://github.com/act101-ai/act101/blob/main/CHANGELOG.md).
+Equivalence is proven over the tests that reach the change — not a whole-program proof.
+act101 tells you the coverage so you know exactly what was verified.
+
+---
+
+## 🔍 act101 online — scan any repo, free
+
+Point act101 at a GitHub repository and get an architectural + AI-code security scan
+with a health score — no install required.
+
+- **Public repositories: free, forever.**
+- **Private repositories: one free scan** — the full GitHub Marketplace app is coming soon.
+
+**→ Start scanning at [act101.ai/online](https://act101.ai/online)**
 
 ---
 
 ## Install
 
-All install paths produce a single dependency-free native executable. 
-The recommended path is the shell installer — it handles binary download
-and optionally wires the Claude Code plugin in one step.
+Every install path produces a single, dependency-free native executable. The shell
+installer is the recommended path — it downloads and verifies the binary and can wire up
+the Claude Code plugin in one step.
 
 ### 1. Shell installer (Linux, macOS) — recommended
 
@@ -45,17 +80,16 @@ and optionally wires the Claude Code plugin in one step.
 curl -sSL https://raw.githubusercontent.com/act101-ai/act101/main/install.sh | sh
 ```
 
-The installer downloads the matching binary for your platform, verifies
-it against `SHA256SUMS.txt`, places it on your `PATH`, and offers to
-register it with Claude Code.
+The installer downloads the matching binary for your platform, verifies it against
+`SHA256SUMS.txt`, places it on your `PATH`, and offers to register it with Claude Code.
 
 Non-interactive flags (pass after `sh -s --`):
 
-- `--install-claude-plugin=<yes|no|ask>` — control Claude Code plugin
-  registration. Default is `ask` in interactive shells, `no` otherwise.
-- `--prefix=<dir>` — install prefix (defaults to `/usr/local/bin` as
-  root, `~/.local/bin` otherwise).
-- `--version=v0.7.19` — pin a specific release.
+- `--install-claude-plugin=<yes|no|ask>` — control Claude Code plugin registration.
+  Default is `ask` in interactive shells, `no` otherwise.
+- `--prefix=<dir>` — install prefix (defaults to `/usr/local/bin` as root,
+  `~/.local/bin` otherwise).
+- `--version=v2.0.2` — pin a specific release.
 - `--dry-run` — print what would happen without making any changes.
 - `--debug` — verbose trace output (enables `set -x`).
 
@@ -79,100 +113,69 @@ iex "& { $(irm https://raw.githubusercontent.com/act101-ai/act101/main/install.p
 
 ### 3. Claude Code marketplace (if you already have `act` on `PATH`)
 
-If the shell installer has already placed `act` on your `PATH`, or you
-built from source, you can register the plugin directly with Claude
-Code:
+If the shell installer has already placed `act` on your `PATH`, or you built from
+source, register the plugin directly with Claude Code:
 
 ```bash
 claude plugin marketplace add act101-ai/act101
 claude plugin install act101@act101-marketplace
 ```
 
-The plugin starts `act mcp serve` using the `act` binary already on
-your `PATH`. Install or update the binary with the shell installer,
-Homebrew, or a manual release download before installing the plugin.
-
-Tool list and skills are described in `plugin/README.md`.
+The plugin starts `act mcp serve` using the `act` binary already on your `PATH`. Install
+or update the binary with the shell installer, Homebrew, or a manual release download
+before installing the plugin. Tool list and skills are described in `plugin/README.md`.
 
 ### 4. Codex marketplace (if you already have `act` on `PATH`)
-
-If you've already installed `act` via the shell installer, Homebrew, or
-built from source, you can register the plugin directly with Codex
-without re-downloading the binary:
 
 ```bash
 codex plugin marketplace add act101-ai/act101
 ```
 
-That registers the marketplace. To activate the `act101` plugin in
-your sessions, open Codex and run the `/plugins` slash command, then
-select **act101** → **Install plugin**. Codex 0.124.0 has no
-non-interactive install verb yet; the slash command is the install
-action.
-
-The Codex plugin starts `act mcp serve` using the `act` binary already
-on your `PATH`; it does not download or cache its own binary.
+That registers the marketplace. To activate the act101 plugin, open Codex, run the
+`/plugins` slash command, then select **act101** → **Install plugin**. (Codex 0.124.0
+has no non-interactive install verb yet; the slash command is the install action.) The
+Codex plugin starts `act mcp serve` using the `act` binary already on your `PATH`.
 
 ### 5. opencode (if you already have `act` on `PATH`)
 
-If you've already installed `act` via the shell installer or built from
-source, register `act101` with [opencode](https://opencode.ai) in one
-command:
+Register act101 with [opencode](https://opencode.ai) in one command:
 
 ```bash
 act install opencode
 ```
 
-This writes the `act101` MCP server entry into
-`~/.config/opencode/opencode.json` (preserving any other `mcp.*` entries
-and JSONC comments) and deploys the act101 skill set into
-`~/.config/opencode/skills/`. Existing skill directories are skipped;
-pass `--force` to overwrite.
-
-To remove everything in one step:
-
-```bash
-act uninstall opencode
-```
-
-Uninstall walks the install manifest in `install.toml` and deletes only
-the files act wrote — user-added files in the same directories are
-preserved.
+This writes the act101 MCP server entry into `~/.config/opencode/opencode.json`
+(preserving any other `mcp.*` entries and JSONC comments) and deploys the act101 skill
+set into `~/.config/opencode/skills/`. Existing skill directories are skipped; pass
+`--force` to overwrite. Remove everything with `act uninstall opencode`, which walks the
+install manifest and deletes only the files act wrote.
 
 ### 6. Cursor (if you already have `act` on `PATH`)
 
-Register `act101` with [Cursor](https://cursor.com) in one command:
+Register act101 with [Cursor](https://cursor.com) in one command:
 
 ```bash
 act install cursor
 ```
 
-This writes the `act101` MCP server entry into `~/.cursor/mcp.json`
-(preserving any other servers and JSONC comments). Restart Cursor to load it.
-
-Or one-click (requires `act` on your `PATH`):
+This writes the act101 MCP server entry into `~/.cursor/mcp.json` (preserving any other
+servers and JSONC comments). Restart Cursor to load it. Or one-click:
 
 [![Add act101 to Cursor](https://img.shields.io/badge/Add%20to-Cursor-000000?logo=cursor)](cursor://anysphere.cursor-deeplink/mcp/install?name=act101&config=eyJjb21tYW5kIjoiYWN0IiwiYXJncyI6WyJtY3AiLCJzZXJ2ZSJdLCJlbnYiOnsiQUNUX0xPR19MRVZFTCI6Indhcm4ifX0=)
 
-To remove:
-
-```bash
-act uninstall cursor
-```
+Remove with `act uninstall cursor`.
 
 ### 7. Zed (if you already have `act` on `PATH`)
 
-Install `act` first with the shell installer, Homebrew, or a manual
-release download. The Zed extension starts `act mcp serve` using the
-`act` binary already on your `PATH`; it does not download or cache its
-own binary.
+Install `act` first (shell installer, Homebrew, or a manual release download). The Zed
+extension starts `act mcp serve` using the `act` binary already on your `PATH`; it does
+not download or cache its own binary.
 
 ### 8. Manual download
 
 Grab the archive for your platform from the
-[latest release](https://github.com/act101-ai/act101/releases/latest),
-verify against `SHA256SUMS.txt`, extract, and place `act` (or
-`act.exe`) on your `PATH`.
+[latest release](https://github.com/act101-ai/act101/releases/latest), verify against
+`SHA256SUMS.txt`, extract, and place `act` (or `act.exe`) on your `PATH`.
 
 ```bash
 # Linux x86_64 (static musl build)
@@ -183,55 +186,41 @@ install -m 755 act ~/.local/bin/act
 
 ---
 
-## Supported platforms
+## Free forever, upgrade when you need to
 
-| OS      | Architecture | Archive                                        |
-|---------|--------------|------------------------------------------------|
-| Linux   | x86_64       | `act-x86_64-unknown-linux-musl.tar.gz` (static) |
-| Linux   | x86_64       | `act-x86_64-unknown-linux-gnu.tar.gz`           |
-| Linux   | aarch64      | `act-aarch64-unknown-linux-gnu.tar.gz`          |
-| macOS   | x86_64       | `act-x86_64-apple-darwin.tar.gz`                |
-| macOS   | aarch64      | `act-aarch64-apple-darwin.tar.gz`               |
-| Windows | x86_64       | `act-x86_64-pc-windows-msvc.zip`                |
-| Windows | aarch64      | `act-aarch64-pc-windows-msvc.zip`               |
+**act101 is free for personal and open-source use — forever.** No license key, no
+account, no expiration. The free **Builder** edition is a complete navigation and
+token-efficiency toolkit: every query tool, all core languages, rename, fix-auto, and a
+suite of analyzers — not a time-limited trial.
 
-The Linux musl build is statically linked and has no libc version
-requirement — use it if you see `GLIBC_X.YY not found` from the glibc
-build.
+Paid editions unlock more refactors, deeper analysis, premium languages, and commercial
+use:
 
----
+| Edition | Adds |
+|--------------|------|
+| **Builder** (free) | All query tools, core languages, rename, fix-auto, core analyzers |
+| **Engineering** | Advanced refactors + analysis for day-to-day teams |
+| **Architecture** | Full analyzer suite: coupling, cycles, seams, migration readiness |
+| **Elite** | Premium languages + the complete refactor and porting surface |
+| **Enterprise** | Commercial use at scale — [talk to sales](https://act101.ai/pricing) |
 
-## Generous free tier
-
-**act101 is free for personal and open-source use — forever.** No license
-key, no account, no expiration. All query tools, all core languages,
-rename, fix-auto, and three analysis tools — included permanently.
-
-The free tier is a complete navigation and token-efficiency tool, not
-a time-limited trial. Paid editions (Engineering, Architecture, Elite,
-Enterprise) unlock additional refactors, analysis tools, premium
-languages, and commercial use. See [pricing](https://act101.ai/pricing)
-for details.
-
-### Planned (not yet wired)
-
-- **OAuth registration** for license management — `act login` will open a
-  browser-based flow tied to an account.
+See **[act101.ai/pricing](https://act101.ai/pricing)** for what each edition includes.
+Operations gated above Builder are annotated in `--help` with their edition.
 
 ---
 
 ## CLI
 
-`act` is a single binary exposing code navigation, refactoring, analysis,
-verification, and porting. Every command answers `--help`; paid operations
-name their edition in the help text. Run `act docs` for the full generated
-reference, or browse [/docs/](https://act101.ai/docs/).
+`act` is a single binary exposing code navigation, refactoring, analysis, verification,
+and porting. Every command answers `--help`; paid operations name their edition in the
+help text. Run `act docs` for the full generated reference, or browse
+[/docs/](https://act101.ai/docs/).
 
 | Command | What it does |
 |---------|--------------|
 | `act query` | Read code structure, references, diagnostics, types (19 query types) |
 | `act inspect` | Discover available actions at a location |
-| `act refactor` | Semantic code transformations (180+ operations; e.g. `act refactor extract-variable`) |
+| `act refactor` | Semantic code transformations (182 operations; e.g. `act refactor extract-variable`) |
 | `act insert` | Add new code at AST-aware locations (`act insert body`) |
 | `act fix` | Apply quick fixes from diagnostics |
 | `act history` | Undo, redo, list checkpoints |
@@ -252,41 +241,54 @@ act catalog              # grammars + operations + per-op tier/CLI/MCP metadata 
 act status               # detected languages, LSP readiness, available tools
 ```
 
-Operations gated above the free **Builder** edition are annotated in `--help`
-with their edition — `(Engineering edition)`, `(Architecture edition)`,
-`(Elite edition)`, or `(Enterprise edition)`. See
-[pricing](https://act101.ai/pricing) for what each edition includes.
-
 ---
 
 ## Tips & tricks
 
-- **Prefer `act` over reading files.** `act skeleton <file>` returns a
-  file's API (signatures, types, exports) without bodies — usually
-  5–10× fewer tokens than reading the raw file.
-- **Use `act symbols` to navigate unfamiliar code.** Lists every
-  symbol in a file with kind and location. Pair with `act definition`
-  and `act references` for jump-to and find-usages.
-- **`act status` prints detected languages, LSP readiness, and every
-  available tool** for the current workspace. Start here when
-  something behaves unexpectedly.
-- **`act diagnostics`** returns LSP errors/warnings without running a
-  build. Scope by passing a directory or file.
-- **Refactor previews are cheap.** Every refactor (`act refactor rename`,
-  `act refactor extract-function`, `act refactor move`, `act refactor inline`, …)
-  accepts `--preview` (the default) — inspect the change set before it touches disk.
-- **Undo is one call.** `act history undo` reverses the last
-  refactor. `act history list` shows what's reversible.
-- **LSP is optional.** Single-file refactors (rename-in-file,
-  `act refactor extract-variable`, etc.) work without an LSP. Cross-file operations
+- **Prefer `act` over reading files.** `act skeleton <file>` returns a file's API
+  (signatures, types, exports) without bodies — usually 5–10× fewer tokens than the raw
+  file.
+- **Use `act symbols` to navigate unfamiliar code.** Lists every symbol in a file with
+  kind and location. Pair with `act definition` and `act references` for jump-to and
+  find-usages.
+- **`act status`** prints detected languages, LSP readiness, and every available tool
+  for the current workspace. Start here when something behaves unexpectedly.
+- **`act diagnostics`** returns LSP errors/warnings without running a build. Scope by
+  passing a directory or file.
+- **Refactor previews are cheap.** Every refactor accepts `--preview` (the default) —
+  inspect the change set before it touches disk.
+- **Undo is one call.** `act history undo` reverses the last refactor; `act history list`
+  shows what's reversible.
+- **LSP is optional.** Single-file refactors work without an LSP. Cross-file operations
   (rename-across-repo, `act refactor move`, find-references) benefit from one.
-- **Set `ACT_LOG_LEVEL=debug`** when diagnosing plugin or MCP issues;
-  logs go to stderr and don't interfere with MCP stdout.
+- **Set `ACT_LOG_LEVEL=debug`** when diagnosing plugin or MCP issues; logs go to stderr
+  and don't interfere with MCP stdout.
+
+---
+
+## Supported platforms
+
+| OS      | Architecture | Archive                                        |
+|---------|--------------|------------------------------------------------|
+| Linux   | x86_64       | `act-x86_64-unknown-linux-musl.tar.gz` (static) |
+| Linux   | x86_64       | `act-x86_64-unknown-linux-gnu.tar.gz`           |
+| Linux   | aarch64      | `act-aarch64-unknown-linux-gnu.tar.gz`          |
+| macOS   | x86_64       | `act-x86_64-apple-darwin.tar.gz`                |
+| macOS   | aarch64      | `act-aarch64-apple-darwin.tar.gz`               |
+| Windows | x86_64       | `act-x86_64-pc-windows-msvc.zip`                |
+| Windows | aarch64      | `act-aarch64-pc-windows-msvc.zip`               |
+
+The Linux musl build is statically linked and has no libc version requirement — use it
+if you see `GLIBC_X.YY not found` from the glibc build.
 
 ---
 
 ## Links
 
+- **Scan your repo:** [act101.ai/online](https://act101.ai/online)
+- **Pricing & editions:** [act101.ai/pricing](https://act101.ai/pricing)
+- **Docs:** [act101.ai/docs](https://act101.ai/docs/)
 - **Releases & binaries:** [github.com/act101-ai/act101/releases](https://github.com/act101-ai/act101/releases)
+- **Release history:** [CHANGELOG.md](https://github.com/act101-ai/act101/blob/main/CHANGELOG.md)
 - **Issues & feedback:** open an issue in this repo.
 - **Homepage:** [act101.ai](https://act101.ai)
