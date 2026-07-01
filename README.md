@@ -222,17 +222,16 @@ actually retire tech debt, not just measure it:
 act trial start          # opens your browser to sign up, then activates automatically
 ```
 
-Then run the loop — in your agent with act101's skills, or straight from the CLI:
+Then run the loop right in your agent with act101's skills:
 
-1. **Audit** — `/architecture-audit` (or `act analyze` directly) maps the codebase and
-   ranks circular dependencies, coupling hotspots, god modules, and dead code into a
-   prioritized report.
-2. **Refactor** — `/architectural-refactoring` (or `act refactor <op>`) executes the
-   decompositions from that report: break cycles, split modules, extract seams — every
-   reference updated across the repo.
-3. **Attest** — `act gate` gives a MERGE / REVIEW / BLOCK verdict per changed function
-   so nothing merges until behavior is preserved, and `act history undo` reverses
-   anything you don't like.
+1. **Audit** — `/architecture-audit` maps the codebase and ranks circular dependencies,
+   coupling hotspots, god modules, and dead code into a prioritized report.
+2. **Refactor** — `/architectural-refactoring` executes the decompositions from that
+   report: break cycles, split modules, extract seams — every reference updated across
+   the repo.
+3. **Attest** — `/verify-refactor` confirms each change preserved behavior — contract,
+   side effects, control flow — before it merges, with one-command rollback if anything
+   drifts.
 
 Repeat until the audit comes back clean. It's the same **analyze → act → attest** loop,
 pointed at your own worst files — free for the length of the trial.
