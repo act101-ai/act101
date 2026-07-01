@@ -2,13 +2,16 @@
 
 > **An LLM editing your code is a guess. act101 turns it into a transform — with a receipt and one-command rollback.**
 
-act101 is an AST-aware code transformer built for AI coding agents. It gives your
-agent precise navigation and refactoring across **163 languages and representational
-grammars**, then **proves each change preserved behavior before it can merge** — using
-roughly **85% fewer tokens** than reading and editing files directly (benchmark average).
+act101 is an AST-aware code transformer — a single native binary that performs precise
+navigation, refactoring, and analysis across **163 languages and representational
+grammars**, then **proves each change preserved behavior before it can merge**. It runs
+surgical operations instead of rewriting whole files — roughly **85% fewer tokens on
+average, up to 99% on reference queries**.
 
-One native binary. One MCP server. Works in **Claude Code**, **Cursor**, **Codex**,
-**Zed**, and **opencode**.
+**Two first-class interfaces, one engine.** Run `act` directly from your terminal, or
+start it as an MCP server inside **Claude Code**, **Cursor**, **Codex**, **Zed**, and
+**opencode**. Every operation is available on both — neither is a wrapper or an
+afterthought.
 
 <p align="left">
   <a href="#install"><b>⬇️  Install free</b></a> &nbsp;·&nbsp;
@@ -30,10 +33,10 @@ AI agents write plausible code fast — and plausible-but-wrong code just as fas
 whole files to reason about a change burns tokens; find-and-replace edits silently break
 callers. act101 replaces both with structure-aware operations and a verification gate:
 
-- **Analyze** — map an unfamiliar codebase without reading it. `act skeleton` returns a
-  file's API (signatures, types, exports) at ~5–10× fewer tokens than the raw file;
-  **33 analyzers** surface coupling, cycles, dead code, hotspots, test gaps, and porting
-  readiness.
+- **Analyze** — map an unfamiliar codebase without reading it. `act query skeleton`
+  returns a file's API (signatures, types, exports) at ~5–10× fewer tokens than the raw
+  file; **33 analyzers** surface coupling, cycles, dead code, hotspots, test gaps, and
+  porting readiness.
 - **Act** — **182 refactoring operations** across **163 grammars**: rename, extract,
   inline, move, split, convert, generate — every reference updated across the repo, with
   a cheap `--preview` and one-command `act history undo`.
@@ -209,6 +212,33 @@ Operations gated above Builder are annotated in `--help` with their edition.
 
 ---
 
+## Pay down tech debt this week — free
+
+Start a **7-day trial** and every edition unlocks — all analyzers, all refactors, all
+languages, no credit card. That's enough to run act101's **quality loop** end to end and
+actually retire tech debt, not just measure it:
+
+```bash
+act trial start          # opens your browser to sign up, then activates automatically
+```
+
+Then run the loop — in your agent with act101's skills, or straight from the CLI:
+
+1. **Audit** — `/architecture-audit` (or `act analyze` directly) maps the codebase and
+   ranks circular dependencies, coupling hotspots, god modules, and dead code into a
+   prioritized report.
+2. **Refactor** — `/architectural-refactoring` (or `act refactor <op>`) executes the
+   decompositions from that report: break cycles, split modules, extract seams — every
+   reference updated across the repo.
+3. **Attest** — `act gate` gives a MERGE / REVIEW / BLOCK verdict per changed function
+   so nothing merges until behavior is preserved, and `act history undo` reverses
+   anything you don't like.
+
+Repeat until the audit comes back clean. It's the same **analyze → act → attest** loop,
+pointed at your own worst files — free for the length of the trial.
+
+---
+
 ## CLI
 
 `act` is a single binary exposing code navigation, refactoring, analysis, verification,
@@ -245,16 +275,16 @@ act status               # detected languages, LSP readiness, available tools
 
 ## Tips & tricks
 
-- **Prefer `act` over reading files.** `act skeleton <file>` returns a file's API
+- **Prefer `act` over reading files.** `act query skeleton <file>` returns a file's API
   (signatures, types, exports) without bodies — usually 5–10× fewer tokens than the raw
   file.
-- **Use `act symbols` to navigate unfamiliar code.** Lists every symbol in a file with
-  kind and location. Pair with `act definition` and `act references` for jump-to and
-  find-usages.
+- **Use `act query symbols` to navigate unfamiliar code.** Lists every symbol in a file
+  with kind and location. Pair with `act query definition` and `act query references`
+  for jump-to and find-usages, or start with `act query repo-outline` for the whole tree.
 - **`act status`** prints detected languages, LSP readiness, and every available tool
   for the current workspace. Start here when something behaves unexpectedly.
-- **`act diagnostics`** returns LSP errors/warnings without running a build. Scope by
-  passing a directory or file.
+- **`act query diagnostics`** returns LSP errors/warnings without running a build. Scope
+  by passing a directory or file.
 - **Refactor previews are cheap.** Every refactor accepts `--preview` (the default) —
   inspect the change set before it touches disk.
 - **Undo is one call.** `act history undo` reverses the last refactor; `act history list`
