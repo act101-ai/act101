@@ -3,7 +3,7 @@ name: change-impact
 description: >
   Use before modifying a file or symbol, or when asked "what breaks if I change X?".
   Depth 0 — fast, no follow-up queries, returns immediately. Two modes: inline (no
-  artifacts, default for agent-initiated use) and artifact (writes to docs/act/,
+  artifacts, default for agent-initiated use) and artifact (writes to .act/runs/,
   triggered for human-initiated requests or Critical risk verdicts).
 ---
 
@@ -19,10 +19,13 @@ map structure.
 
 | Tool | Purpose | MCP call | Tier |
 |------|---------|----------|------|
-| `analyze_impact` (file mode) | Blast radius — files that depend on target (R1) | `analyze_impact` with `target: <file>` | Free |
+| `analyze_impact` (file mode) | Blast radius — files that depend on target (R1) | `analyze_impact` with `target: <file>` | Architecture |
 | `analyze_impact` (symbol mode) | Transitive callers of a function symbol | `analyze_impact` with `target: <file>` and `symbol: <name>` | Architecture |
-| `analyze_test_gaps` | Is the target tested? (R5) | `analyze_test_gaps` | — |
-| `analyze_cycle_risk` | Is the target in a risky cycle? (R6) | `analyze_cycle_risk` | — |
+| `analyze_test_gaps` | Is the target tested? (R5) | `analyze_test_gaps` | Architecture |
+| `analyze_cycle_risk` | Is the target in a risky cycle? (R6) | `analyze_cycle_risk` | Architecture |
+
+All four are Architecture tier — `analyze_impact` in both modes (there is no Free
+file-mode teaser).
 
 **Symbol mode workflow (Architecture):** For PR review or before renaming/changing a function signature,
 run `skeleton` to confirm the function exists in the file, then use symbol mode to get the full
@@ -40,11 +43,11 @@ If `analyze_impact` is unavailable: report that and stop — no useful verdict p
 
 **Inline mode** (default for agent-initiated use):
 - Returns the summary directly to the calling agent
-- Does NOT write artifacts to disk
+- Does NOT write artifacts to disk (the protocol's Step 1 setup applies to artifact-writing runs only)
 - Use when an agent needs a quick risk check before making a change
 
 **Artifact mode** (for human-initiated requests, or when verdict is Critical):
-- Follows the full artifact protocol: create `docs/act/<timestamp>/`, write
+- Follows the full artifact protocol: create `.act/runs/<YYYY-MM-DD-HHMMSS>/`, write
   `manifest.json`, save `raw/*.json`, write `report.md`
 - Triggered automatically when verdict is **Critical**, even if initially invoked inline
 - Triggered by explicit user request (e.g., "analyze impact of changing X")

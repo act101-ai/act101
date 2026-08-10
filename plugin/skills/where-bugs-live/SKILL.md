@@ -15,7 +15,7 @@ Rank the code most likely to harbor defects by composing four signals. Bugs clus
 
 ## Inputs
 
-The git-overlay ops require a git repository with history. All are MCP tools (Architecture tier).
+A git repository with history for the three git overlays — `churn_hotspots` (workspace mode), `co_change_clusters`, `ownership_map` (all Architecture tier). `analyze_hotspots` is static — no git needed (Engineering tier).
 
 ## Protocol
 

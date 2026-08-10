@@ -7,7 +7,7 @@ description: >
   recommended migration order, hard/soft blocker list, and platform dependency assessment.
   Optionally enriches the plan with security and history evidence (taint flow, secret
   surface, unsafe constructs, coverage, churn, ownership) so blockers reflect real
-  porting risk, not structure alone. Replaces the migration-readiness-plus skill.
+  porting risk, not structure alone.
 ---
 
 # Migration Assessment
@@ -17,6 +17,15 @@ description: >
 See `../analysis-protocol/references/protocol.md` for: artifact directory structure,
 the investigation loop, depth levels, summary format, token budget rules, and project
 map structure. Read that document before proceeding.
+
+## Phase 0: Refuted-Ledger Read (before any tool dispatch)
+
+If `project-map.md` exists at the workspace root, read its
+`## Refuted & Re-characterized Findings` ledger first (protocol mandate for depth-2+
+skills). Do not re-investigate a refuted hypothesis unless this run surfaces new
+contradicting evidence — carry it as "previously refuted (date), no new evidence".
+During synthesis, add each newly refuted or re-characterized hypothesis from this
+run's investigation to that ledger with the disproving evidence.
 
 ## Phase 1: Parallel Tool Dispatch
 
@@ -44,7 +53,7 @@ assessment is possible without it.
 | `analyze_fan_balance` | Migration ordering — fan-in/fan-out (M6) | `analyze_fan_balance` |
 | `analyze_depth` | Dependency chain depth (S4) | `analyze_depth` |
 | `analyze_inheritance` | Tangled inheritance hierarchies (H6) | `analyze_inheritance` |
-| `analyze_patterns` | Hard porting blockers | `analyze_patterns` (use `--pattern porting_blockers` if available, else `--tier all`) |
+| `analyze_patterns` | Hard porting blockers | `analyze_patterns` (`pattern: "porting_blockers"` if available, else `tier: "all"`) |
 
 ## Phase 2: Investigation
 
@@ -122,8 +131,9 @@ For each top-level module:
 
 ## Project Map Updates
 
-Appends or updates the **"Migration Readiness"** section. Appends to the Analysis
-History table.
+Appends or updates the **"Migration Readiness"** section. Adds newly refuted /
+re-characterized hypotheses to the **Refuted & Re-characterized Findings** ledger
+(see Phase 0). Appends to the Analysis History table.
 
 ## Optional Enrichment: Security & History Evidence
 
@@ -134,7 +144,7 @@ not just structural readiness. This is optional: skip any dimension whose eviden
 or tier is unavailable and mark it UNASSESSED (never a clean bill).
 
 **Tier:** composed tools enforce their own tiers — `unsafe_surface` Free,
-`secret_surface` Engineer, `taint_flow`/`coverage_overlay`/`ownership_map` Architecture,
+`secret_surface` Engineering, `taint_flow`/`coverage_overlay`/`ownership_map` Architecture,
 `churn_hotspots` Free for a single file / Architecture in workspace mode. If a tool is
 tier-blocked, its dimension is UNASSESSED — say so.
 

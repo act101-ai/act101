@@ -11,8 +11,13 @@ ops with the port inventory.
 
 ## Honesty caveat (read first)
 
-This is a structural/contract comparison (v1), not execution-based differential
-testing. `verify_port_parity` and `verify_behavioral_equivalence` (scope=port)
+By default this is a structural/contract comparison. `verify_port_parity` also
+offers opt-in differential execution (`execute: true`) — it generates inputs from
+the source signature and runs both functions under a resource-capped subprocess,
+diffing their JSON outputs; eligible only when both sides run under a supported
+interpreter (node, python3) with a JSON-able signature, falling back to structural
+comparison otherwise. Structurally, `verify_port_parity` and
+`verify_behavioral_equivalence` (scope=port)
 compare only dimensions BOTH grammars model — a dimension modeled by one side
 only is reported `unknown`, never falsely `preserved`/`diverged`. Each result
 carries `modeled_kinds`; an empty set for either grammar means that dimension is
@@ -36,9 +41,10 @@ Enterprise and enforce the tier themselves.
 ## Workflow
 
 1. Call `verify_behavioral_equivalence` with `scope:"port"`, the source
-   `target`/`file` and the ported version (via `before`/`after` or the manifest
-   mapping). `equivalent` confirms shape held; `changed` lists which dimensions
-   diverged; `unknown` means a dimension could not be normalized across the pair
+   `target`/`file` and the ported version via `before`/`after` (look up the
+   source→target mapping with `port_inventory` first). `equivalent` confirms shape
+   held; `changed` lists which dimensions diverged; `unknown` means a dimension
+   could not be normalized across the pair
    — do not claim parity on it.
 2. Call `verify_port_parity` with `source_file`/`source_target` and
    `ported_file`/`ported_target`. Read the verdict (`preserved`/`diverged`/

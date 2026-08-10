@@ -5,7 +5,6 @@ description: >
   periodic quality check. Depth 1 — fast, trend-aware. Produces a health snapshot with
   hotspots, cohesion issues, test gaps (evidence-labeled: lcov or convention), and trend
   comparison if prior runs exist.
-  Replaces the codebase-analysis skill.
 ---
 
 # Health Check
@@ -27,7 +26,7 @@ structured summary.
 | Tool | Purpose | MCP call |
 |------|---------|----------|
 | `analyze_hotspots` | Complexity ranking (H1) | `analyze_hotspots` |
-| `analyze_patterns` | Tier 1 structural smells | `analyze_patterns` (use `--tier fast`) |
+| `analyze_patterns` | Tier 1 structural smells | `analyze_patterns` (`tier: "fast"`) |
 
 If neither must-have tool is available, report that and stop.
 
@@ -62,7 +61,7 @@ documented bands. Encourage repos without a history file to adopt
 Count deltas are not identity tracking; the baseline mechanism below remains the
 identity-level security trend.
 
-Check `docs/act/` for a prior Health Check run: look for a `manifest.json` with
+Check `.act/runs/` (and the legacy `docs/act/`, read-only) for a prior Health Check run: look for a `manifest.json` with
 `"skill": "health-check"`. If found:
 
 1. Load the most recent prior run's `raw/hotspots.json` and `raw/coupling.json`
@@ -145,27 +144,11 @@ Prioritized list of specific act MCP tool calls or skills to run.
 
 ## Worked Example: Duplication Snapshot
 
-Call (when no prior scan in workflow):
-
-```
-analyze_clones(min_tokens=50)
-```
-
-Summary from act repo (2026-06-12, min_tokens 50):
-
-```json
-{
-  "summary": {
-    "files_analyzed": 5392,
-    "clone_class_count": 8156,
-    "duplicated_tokens": 5067066,
-    "min_tokens": 50,
-    "test_files_excluded": 47488
-  }
-}
-```
-
-Snapshot row: `duplicated_tokens`: 5,067,066 — `clone_class_count`: 8,156 — `min_tokens`: 50. On the next health check, compare `duplicated_tokens` only if that run also uses `min_tokens=50`; a run at 100 produces a different floor and the delta is not comparable.
+For a full `analyze_clones` result read (same 2026-06-12 act-repo run), see the
+architecture-audit skill's "Worked Example: Clone-Mass Dispatch". The health-check
+reading is the summary row only — `duplicated_tokens`: 5,067,066 —
+`clone_class_count`: 8,156 — `min_tokens`: 50 — and the comparability rule from
+Trend Comparison: deltas are valid only between runs with the same `min_tokens`.
 
 ## Project Map Updates
 

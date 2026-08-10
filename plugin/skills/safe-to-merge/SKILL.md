@@ -26,10 +26,11 @@ exact-body renames are paired as signature changes), then composes the
 verification trio per function: `verify_diff_semantics` (hunk classes —
 guard-condition changes count as behavior), `verify_test_impact` (does any
 test reach it — syntactic call-graph floor with import resolution),
-`verify_side_effects` (effect delta, dropped cleanup). Broadly: format- or
-signature-only changes with test reach merge; tested behavior changes ask for
-review; untested behavior/signature changes and dropped cleanup block; anything
-the grammar cannot model degrades to UNKNOWN with `modeled_kinds` quoted.
+`verify_side_effects` (effect delta, dropped cleanup). Broadly: format-only
+changes merge (no test-reach requirement); signature-only changes merge with test
+reach and block without it; tested behavior changes ask for review; untested
+behavior changes and dropped cleanup block; anything the grammar cannot model
+degrades to UNKNOWN with `modeled_kinds` quoted.
 Changed test code is exempt from the reach rule. The authoritative matrix is in
 `act-analysis`'s `gate` module — read the per-function `reason` field; it cites
 the rule that fired.
@@ -44,7 +45,7 @@ return UNKNOWN with the evidence quoted.
 
 ## Tier
 
-**Engineer** (the verify trio's tier; named Pro before V2). Tier-blocked runs
+**Engineering** (the verify trio's tier; named Pro before V2). Tier-blocked runs
 and premium-language files report UNKNOWN with the blocking dimension named —
 report that, do not guess a verdict.
 

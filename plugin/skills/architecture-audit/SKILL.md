@@ -7,7 +7,6 @@ description: >
   or code patterns. Depth 3 — full audit with hypothesis-driven investigation.
   Optionally enriches the structural audit with runtime and git evidence (coverage,
   churn, co-change coupling, ownership) when those overlays are available.
-  Replaces the architectural-analysis and architecture-audit-plus skills.
 ---
 
 # Architecture Audit
@@ -77,11 +76,9 @@ structured summary.
 | `analyze_patterns` | Structural smells | `analyze_patterns` |
 | `analyze_export` | Codebase dimensions | `analyze_export` |
 
-Interpret `analyze_seams` through the cluster output that feeds it. `total_seams: 0`
-only means there are no crossing edges between the detected clusters. If
-`analyze_clusters` reports fewer than two clusters, `hub_collapse: true`, or one cluster
-containing the whole scope, do not report "no boundary"; report the cluster artifact and
-investigate with `dampen_top_k`, `split_module`, `analyze_surface`, or `simulate`.
+Interpret `analyze_seams` through the cluster output that feeds it — canonical reading
+in the protocol's Shared Interpretation Rules (seam / hub-collapse). Never report
+"no boundary" from `total_seams: 0` alone.
 
 **Extended tools (use if available, skip and note in manifest if not):**
 
@@ -123,7 +120,7 @@ taxonomy. One module appearing in multiple columns is a stronger signal.
 | High instability + appears in cycle | God object / hub | `skeleton` + `interface` — is the API surface wider than the abstraction warrants? |
 | High instability + wide seam API | Leaky abstraction | `analyze_surface` at boundary — count unrelated symbols crossing it |
 | Large cluster + low cohesion score | Accidental cluster / false boundary | `skeleton` on cluster members — do they share a concept? |
-| Cycle length > 3 | Tightly-coupled subsystem | `analyze_surface --files <members>` — find the minimum cut |
+| Cycle length > 3 | Tightly-coupled subsystem | `analyze_surface` (`files: [<members>]`) — find the minimum cut |
 | Single-file cluster | Orphan / orphaned extract | `references` — does anything depend on this module? |
 | Dead code in frequently-modified file | Zombie code / incomplete refactor | `symbols` + `references` — confirm no live callers |
 | Pattern hotspot + high instability | Design debt accumulation point | `skeleton` — does the file serve multiple unrelated concerns? |
@@ -253,8 +250,8 @@ Analysis History table.
 **Confirmed remediations:** when this run's evidence confirms a `remediation-log.md` claim, reflect
 it in the rewritten map — drop or down-rank the resolved item in Chokepoints & Risks / Weaknesses,
 and let the resolution show in the delta and trend verdict. Do **not** copy the remediation log
-into the map and do **not** edit the log itself — the map records *current state*, the log records
-*actions taken*, and the refactoring skill owns the log. A claim the structure contradicts stays an
+into the map and do **not** edit the log itself (ownership + separation rationale live in the
+protocol's Artifact Directory Structure). A claim the structure contradicts stays an
 open finding (and may warrant a Refuted-ledger entry if the "fix" was based on a misdiagnosis).
 
 **Refuted & Re-characterized Findings ledger (required):** the project map carries a persistent

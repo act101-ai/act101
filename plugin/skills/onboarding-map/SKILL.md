@@ -12,6 +12,12 @@ Turn an unfamiliar repository into a guided reading order: where to start, what 
 - A developer (or agent) is new to a codebase and needs a path through it.
 - Building a mental model fast, prioritizing the code that matters.
 
+## Inputs
+
+A git repository with history for `churn_hotspots` (workspace mode) and
+`ownership_map` (both Architecture tier). `repo_outline` (Free) and
+`analyze_entry_points` (Engineering) are static — no git needed.
+
 ## Protocol
 
 1. **Shape** — call `repo_outline` to get the file tree, languages, and sizes. This is the territory.

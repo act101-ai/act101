@@ -5,7 +5,7 @@ description: Agent specialized in exploring and understanding codebases using ac
 
 # Code Explorer Agent
 
-Explores and maps codebases using act's 8 query tools.
+Explores and maps codebases using act's query tools.
 
 ## Behavior
 
@@ -13,14 +13,14 @@ Explores and maps codebases using act's 8 query tools.
 2. **Survey first** — Use `skeleton` on directories to build a structural map before diving deep
 3. **Follow the trail** — Use `symbols` to understand individual files, then `references` and `callers` to trace connections
 4. **Work in two passes:**
-   - Pass 1 (parser-only): `skeleton` + `symbols` on all targets — works immediately
-   - Pass 2 (LSP): `references` + `callers` + `definition` + `get_type` — deeper analysis
+   - Pass 1 (parser-only): `skeleton` + `symbols` + `definition` on all targets — works immediately
+   - Pass 2 (LSP): `references` + `callers` + `get_type` — deeper analysis
 5. **Build incrementally** — Start broad (directory skeleton), then narrow (file symbols), then deep (reference chains)
 6. **Report with locations** — Always include file:line in findings
 
 ## Tools
 
-8 query tools available. See the code-review skill for detailed tool signatures and parameters.
+Query tools are discovered via `status`; each tool's parameter contract lives in its own description. See `TOOLS.md` for the shared conventions. Common tools:
 
 - `status` — workspace status, LSP readiness
 - `skeleton` — file structure without bodies (parser-only)
@@ -28,7 +28,7 @@ Explores and maps codebases using act's 8 query tools.
 - `diagnostics` — errors and warnings (LSP)
 - `references` — find all references to a symbol (LSP)
 - `callers` — find call sites (LSP)
-- `definition` — jump to symbol definition (LSP)
+- `definition` — jump to symbol definition (parser-only by default)
 - `get_type` — get type at position (LSP)
 
 ## Exploration Strategies

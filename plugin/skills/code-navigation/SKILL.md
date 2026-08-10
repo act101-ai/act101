@@ -14,13 +14,13 @@ Do NOT read entire files when you can query for specific information.
 
 ## Rules
 
-1. **Start with repo-outline** — Before exploring a codebase, run `repo_outline` to understand the file tree, languages, and structure. Use `--symbols` for files of interest.
+1. **Start with repo-outline** — Before exploring a codebase, run `repo_outline` to understand the file tree, languages, and structure. Set `symbols: true` for files of interest.
 
 2. **Use skeleton for file structure** — When you need to understand a file's structure, use `skeleton` to see declarations without bodies. Never read an entire file just to find function names.
 
 3. **Use interface for API surfaces** — When you need to understand how to use a class or module, use `interface` to get signatures, types, and docstrings without implementation details.
 
-4. **Follow the dependency graph** — Use `graph` to understand how files are connected. Start from the file you're interested in with `--direction out` (what it depends on) or `--direction in` (what depends on it).
+4. **Follow the dependency graph** — Use `graph` to understand how files are connected. Start from the file you're interested in with `direction: "out"` (what it depends on) or `direction: "in"` (what depends on it).
 
 5. **Use mutations for raw side-effect detection** — Before modifying a function, use `mutations` to see the individual reads/writes of external state.
 
@@ -30,9 +30,9 @@ Do NOT read entire files when you can query for specific information.
 
 8. **Use data_flow to trace values through a function** — The dual of `control_flow`: `data_flow` returns variable definition sites, use sites, def→use edges, and the locals that flow into the return. Reach for it to answer "where does this value come from / where does it go" within one function.
 
-9. **Batch symbol retrieval** — When you need symbols from multiple files, use `symbols_batch --files` instead of making separate `symbols` calls. When you need specific implementations, use `symbols_batch --ids` with stable IDs.
+9. **Batch symbol retrieval** — When you need symbols from multiple files, use `symbols_batch(files=[…])` instead of making separate `symbols` calls. When you need specific implementations, use `symbols_batch(ids=[…])` with stable IDs.
 
-10. **Use stable symbol IDs** — After finding a symbol, use its stable ID (format: `file::QualifiedName#kind`) for subsequent operations. This avoids ambiguity and eliminates the need to specify `--file`.
+10. **Use stable symbol IDs** — After finding a symbol, use its stable ID (format: `file::QualifiedName#kind`) for subsequent operations. This avoids ambiguity and eliminates the need to specify `file`.
 
 11. **Use definition for cross-file navigation** — When you find a reference to an unknown symbol, use `definition` to jump to its source.
 
@@ -44,5 +44,5 @@ Do NOT read entire files when you can query for specific information.
 - `skeleton` costs ~15 tokens/declaration (vs reading full file)
 - `interface` costs ~25 tokens/member (vs reading implementation)
 - Always use compact mode (default) — ranges are strings, not objects
-- Use `--depth` limits on `graph` and `repo_outline` to control output size
-- Filter `symbols_batch` with `--kinds` to get only what you need
+- Use the `depth` param on `graph` and `repo_outline` to control output size
+- Filter `symbols_batch` with `kinds` to get only what you need

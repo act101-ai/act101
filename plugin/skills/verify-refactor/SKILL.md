@@ -6,7 +6,7 @@ description: Verify a refactor preserved behavior — composes contract, side-ef
 # verify-refactor
 
 Confirm a function's refactor is behavior-preserving by composing three
-Engineer-tier verification ops over a two-version comparison (git working-tree
+Engineering-tier verification ops over a two-version comparison (git working-tree
 vs `HEAD` by default, or an explicit before/after pair).
 
 Scope note: this skill verifies ONE function pair. For a changed SET of
@@ -22,7 +22,7 @@ this skill's per-function SAFE/REVIEW/UNSAFE/UNKNOWN.
 | 2 | `verify_side_effects` | Which side effects were added/removed? Was a cleanup dropped? |
 | 3 | `verify_behavioral_equivalence` | Is the control-flow shape equivalent (no new/removed branches, loops, exception paths)? |
 
-All three are **Engineer**. `verify_behavioral_equivalence` at `scope:"port"` is Enterprise.
+All three are **Engineering**. `verify_behavioral_equivalence` at `scope:"port"` is Enterprise.
 
 ## How to run
 

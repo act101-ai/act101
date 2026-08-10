@@ -23,9 +23,9 @@ by construction; that is not a verification gap, it is the correct honest answer
 
 ## Tier
 
-**Engineer.** The gate tool (which writes receipts) requires the Engineer tier.
-The `receipt: true` parameter on the four refactor tools also requires Engineer;
-it is silently ignored in preview mode.
+**Engineering.** The gate tool (which writes receipts) requires the Engineering
+tier. The `receipt: true` parameter on the four refactor tools also requires
+Engineering; it is silently ignored in preview mode.
 
 ## Emitting receipts
 
@@ -55,10 +55,10 @@ gate engine.
 
 The four refactor tools (`rename`, `extract_function`, `move_symbol`, `inline`)
 accept `receipt: true` to write a receipt immediately after applying the change.
-CLI usage (dev builds, `--features dev-cli`):
+CLI usage:
 
 ```
-act refactor --receipt rename --file src/lib.ts --old-name foo --new-name bar
+act refactor --receipt rename foo bar --file src/lib.ts
 ```
 
 MCP equivalent (pass `receipt=true` as a parameter):

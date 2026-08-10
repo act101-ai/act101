@@ -10,7 +10,7 @@ description: >
 
 # Refactoring with act
 
-6 MCP refactor tools with preview mode and undo/redo. All tools are tree-sitter based — no LSP required.
+MCP refactor tools with preview mode and undo/redo — this skill documents `rename`, `extract_function`, `extract_variable`, `inline`, `move_symbol`, and `import_organize`; the MCP catalog's Refactoring group also ships `insert_body` (insert/replace a function body) and `recipe_run` (multi-site recipes, Enterprise). All tools are tree-sitter based — no LSP required.
 
 ## Start Here
 
@@ -58,7 +58,7 @@ import_organize(file="src/main.ts", preview=true)
 
 ## Workflow
 
-1. **Preview first** — Set `preview=true` (or omit — default is false, so always set it explicitly for safety)
+1. **Preview first** — the default is `preview=false`, so always set `preview=true` explicitly on the first run
 2. **Review the diff** — Check the returned `FileChange[]` array
 3. **Apply** — Re-run with `preview=false`
 4. **Verify** — Run `diagnostics(file="...")` to check for introduced errors
@@ -90,7 +90,7 @@ After structural refactoring (extract class, extract interface), the new type of
 
 ## Full Operation Catalog
 
-The `act` CLI supports ~160 refactor operations beyond the 6 MCP tools (generate-constructor, convert-async, wrap-try-catch, etc). See [operation-catalog.md](references/operation-catalog.md) for the complete list organized by category. These are available via the CLI but not yet exposed as individual MCP tools.
+The `act` CLI supports thousands of registry-defined operations across 163 grammars beyond the MCP tools (generate-constructor, convert-async, wrap-try-catch, …). See [operation-catalog.md](references/operation-catalog.md) for how to discover the live per-language surface — it is registry-derived, never a hand list.
 
 ## Error Recovery
 

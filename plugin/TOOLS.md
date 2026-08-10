@@ -1,161 +1,76 @@
-# act MCP Tools Reference
+# act MCP Tools — Contract & Conventions
 
-17 tools exposed by the `act` MCP server. Tool names below are the canonical protocol names; individual MCP clients may render them with a client-specific prefix (e.g., Claude Code shows `skeleton`, Codex CLI shows `act.skeleton`).
+The `act` MCP server advertises its tool surface dynamically, and the surface
+grows with releases. This file therefore does not enumerate tools or copy
+parameter signatures — hand-maintained lists go stale. It documents how to
+discover the live surface and the conventions every tool shares.
 
-## Quick Reference
+## Discovering the surface
 
-| Tool | Purpose | LSP Required |
-|------|---------|-------------|
-| `status` | Workspace status and LSP readiness | No |
-| `skeleton` | File structure without bodies | No |
-| `symbols` | All symbols defined in a file | No |
-| `diagnostics` | Errors, warnings, hints | Yes |
-| `references` | Find all references to a symbol | Yes |
-| `callers` | Find call sites for a function | Yes |
-| `definition` | Jump to symbol definition | Yes |
-| `get_type` | Get type of expression at position | Yes |
-| `rename` | Rename symbol across codebase | No |
-| `extract_function` | Extract code range to new function | No |
-| `extract_variable` | Extract expression to variable | No |
-| `inline` | Inline a variable or function | No |
-| `move_symbol` | Move symbol to different file | No |
-| `import_organize` | Sort and clean imports | No |
-| `history_list` | List recent operations | No |
-| `history_undo` | Undo last operation(s) | No |
-| `history_redo` | Redo undone operation(s) | No |
+1. Call `status` first in any new workspace. It returns the tool groups, the
+   per-language refactoring-operation index, detected languages with LSP
+   readiness, and `toolsets_enabled`.
+2. Every advertised tool carries its authoritative parameter contract in its
+   protocol `inputSchema`, and (with one cosmetic exception) a `Params:` line
+   in its description. Read those — never guess parameters from memory or
+   from this file.
+3. Chain tools rather than guessing — `symbols` → `definition` → `references`
+   → `rename` is the common path. Each tool's description names what it pairs
+   with.
+4. An operation absent from discovery output is unavailable for that language —
+   do not fall back to freehand edits.
 
-## Query Tools
+## Tool groups
 
-### status
-Get workspace status including detected languages and LSP readiness. Call this first.
-```json
-{"name": "status"}
-```
-Returns: `{ name, version, operational, tools[], workspace: { root, languages[] } }`
+| Group | Purpose |
+|-------|---------|
+| Status | Always-on: `status` (discovery) and `enable_toolset` (widen the advertised list) |
+| Exploration | Understand codebase structure without reading files |
+| Navigation | Jump to definitions and find all usages |
+| Understanding | Understand code logic without reading bodies |
+| Refactoring | AST-aware code transformations, safer than manual edits |
+| Verification | Check and auto-fix code issues |
+| Architecture | Analyze structure, coupling, and dead code |
+| Porting | Track and execute cross-language code porting projects |
+| History | Undo/redo any refactoring operation |
 
-### skeleton
-Get file structure (function/class/method declarations) without bodies.
-```json
-{"name": "skeleton", "arguments": {"file": "src/main.ts"}}
-```
-Parameters: `file` (required) — path to source file.
+Run `status` for the live tools in each group. (The always-on Status pair is
+named above; `status` itself reports the other eight groups.)
 
-### symbols
-List all symbols defined in a file with their kinds and locations.
-```json
-{"name": "symbols", "arguments": {"file": "src/main.ts"}}
-```
-Parameters: `file` (required) — path to source file.
+## Toolsets (progressive disclosure)
 
-### diagnostics
-Get compiler/linter errors, warnings, and hints for a file. Requires LSP.
-```json
-{"name": "diagnostics", "arguments": {"file": "src/main.ts"}}
-```
-Parameters: `file` (required) — path to source file.
+- Default: every toolset is enabled — the full surface is advertised.
+- A deployment can restrict what is advertised:
+  `act mcp serve --toolsets "Navigation,Architecture"` advertises only those
+  groups (plus the always-on pair).
+- A restricted session widens itself at runtime: call `enable_toolset` with
+  `toolsets: ["<Group>", …]` (group names from `status`) — the server emits
+  `tools/list_changed` so the client re-lists.
+- `status` and `enable_toolset` are always advertised, so a restricted session
+  can always bootstrap and widen itself.
 
-### references
-Find all references to a symbol across the workspace. Requires LSP.
-```json
-{"name": "references", "arguments": {"symbol": "UserService", "file": "src/services/user.ts"}}
-```
-Parameters: `symbol` (required), `file` (optional — scopes search, improves performance).
+## Cross-cutting conventions
 
-### callers
-Find all call sites for a function or method. Requires LSP.
-```json
-{"name": "callers", "arguments": {"symbol": "processPayment", "file": "src/billing.ts"}}
-```
-Parameters: `symbol` (required), `file` (optional — locates symbol).
-
-### definition
-Jump to symbol definition location. Requires LSP.
-```json
-{"name": "definition", "arguments": {"symbol": "UserService", "file": "src/api.ts", "line": 15, "column": 10}}
-```
-Parameters: `symbol` (required), `file` (required), `line` (required, 1-indexed), `column` (required, 1-indexed).
-
-### get_type
-Get the type of an expression at a position. Requires LSP.
-```json
-{"name": "get_type", "arguments": {"file": "src/api.ts", "line": 42, "column": 12}}
-```
-Parameters: `file` (required), `line` (required, 1-indexed), `column` (required, 1-indexed).
-
-## Refactor Tools
-
-All refactor tools support `preview` mode (default: `false`). Set `preview: true` to see changes without applying them.
-
-### rename
-Rename a symbol and update all references across the codebase.
-```json
-{"name": "rename", "arguments": {"file": "src/user.ts", "old_name": "getData", "new_name": "fetchData", "preview": true}}
-```
-Parameters: `file` (required), `old_name` (required), `new_name` (required), `line` (optional), `column` (optional), `preview` (default: false).
-
-### extract_function
-Extract a code range into a new named function.
-```json
-{"name": "extract_function", "arguments": {"file": "src/utils.ts", "new_name": "validateInput", "start_line": 10, "start_column": 1, "end_line": 20, "end_column": 50, "preview": true}}
-```
-Parameters: `file` (required), `new_name` (required), `start_line` (required), `start_column` (required), `end_line` (required), `end_column` (required), `preview` (default: false).
-
-### extract_variable
-Extract an expression into a named variable.
-```json
-{"name": "extract_variable", "arguments": {"file": "src/calc.ts", "new_name": "basePrice", "start_line": 15, "start_column": 5, "end_line": 15, "end_column": 40, "preview": true}}
-```
-Parameters: `file` (required), `new_name` (required), `start_line` (required), `start_column` (required), `end_line` (required), `end_column` (required), `preview` (default: false).
-
-### inline
-Inline a variable or function at its usage sites.
-```json
-{"name": "inline", "arguments": {"file": "src/utils.ts", "symbol": "tempResult", "preview": true}}
-```
-Parameters: `file` (required), `symbol` (required), `line` (optional), `preview` (default: false).
-
-### move_symbol
-Move a symbol to a different file, updating all imports. Creates the destination file if it doesn't exist.
-```json
-{"name": "move_symbol", "arguments": {"file": "src/models.ts", "symbol": "UserService", "destination": "src/services/user.ts", "preview": true}}
-```
-Parameters: `file` (required), `symbol` (required), `destination` (required), `preview` (default: false).
-
-### import_organize
-Sort and clean up imports in a file.
-```json
-{"name": "import_organize", "arguments": {"file": "src/main.ts", "preview": true}}
-```
-Parameters: `file` (required), `preview` (default: false).
-
-## History Tools
-
-### history_list
-List recent refactoring operations with affected files.
-```json
-{"name": "history_list", "arguments": {"limit": 10}}
-```
-Parameters: `limit` (optional, default: 10).
-
-### history_undo
-Undo the most recent operation(s).
-```json
-{"name": "history_undo", "arguments": {"count": 1, "preview": true}}
-```
-Parameters: `count` (optional, default: 1), `preview` (default: false).
-
-### history_redo
-Redo previously undone operation(s).
-```json
-{"name": "history_redo", "arguments": {"count": 1, "preview": true}}
-```
-Parameters: `count` (optional, default: 1), `preview` (default: false).
-
-## Notes
-
-- **Preview mode:** All refactor tools accept `preview`. When true, returns the diff without modifying files.
-- **LSP tools:** Tools marked "Requires LSP" need a running language server. Check `status` first. If LSP is not ready, use parser-only tools (`skeleton`, `symbols`) while waiting.
-- **Parser-only tools** (`skeleton`, `symbols`, all refactor tools) work immediately without LSP.
-- **Positions are 1-indexed:** Lines start at 1, columns start at 1.
-- **File creation:** Refactor and CLI operations automatically create target files (and parent directories) if they don't exist. You do NOT need to create files before running operations like `move_symbol`, `extract-class`, or `extract-interface`. The operation handles it.
-- **Batching:** Independent operations (different symbols, different files) should be dispatched in parallel. Only sequence operations where one depends on another's output.
+- **Preview before apply:** every mutating tool can dry-run, but the flag
+  differs. Most take `preview` (default `false`) — set `preview: true` to get
+  the would-be changes without touching files. `insert_body` and `fix_auto`
+  instead take `commit` (default `false`), so they preview by default and only
+  write when you pass `commit: true`. Read the tool's `inputSchema`; never
+  assume which flag applies.
+- **LSP:** tools that need a language server say so in their descriptions;
+  `status` reports per-language LSP readiness. Parser-only tools (`skeleton`,
+  `symbols`, …) work immediately, and LSP-backed tools degrade gracefully to
+  tree-sitter where possible — check each tool's own description rather than
+  assuming.
+- **Positions are 1-indexed:** lines and columns both start at 1.
+- **File creation:** operations create destination files (and parent
+  directories) automatically — never pre-create a file for `move_symbol`,
+  `extract-class`, `extract-interface`, or any destination-creating operation.
+- **Absolute paths** are accepted everywhere.
+- **Batching:** dispatch independent operations (different symbols, different
+  files) in parallel; sequence only where one depends on another's output.
+- **History:** committing operations record undoable checkpoints — see
+  `history_list`, `history_undo`, `history_redo`.
+- **Client name prefixes:** tool names are canonical protocol names; MCP
+  clients may render a prefix (Claude Code shows `skeleton`, Codex CLI shows
+  `act.skeleton`).

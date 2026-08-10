@@ -19,8 +19,8 @@ A prior architecture audit must exist:
 
 - `project-map.md` at the workspace root — the living architectural document, including its
   `## Refuted & Re-characterized Findings` ledger.
-- A run report at `docs/act/<YYYY-MM-DD-HHMMSS>/report.md` — use the run with the highest
-  timestamp. `docs/act/` is gitignored, so on a fresh clone the report may be absent even though
+- A run report at `.act/runs/<YYYY-MM-DD-HHMMSS>/report.md` — use the run with the highest
+  timestamp (legacy runs may sit read-only under `docs/act/`). `.act/runs/` is gitignored, so on a fresh clone the report may be absent even though
   `project-map.md` (which carries findings and the Refuted ledger forward) survives. If no local
   report exists, work from `project-map.md` and re-run `architecture-audit` to regenerate one.
 
@@ -30,9 +30,9 @@ former `architectural-analysis` skill. If any doc still references that name, or
 
 ## Rules
 
-1. **Start from the audit** — Read `project-map.md` and the latest `docs/act/<ts>/report.md` first. Every refactoring decision must trace back to a confirmed finding (by its finding ID) in that report. Check the map's Refuted & Re-characterized Findings ledger first — never "fix" a smell that was already investigated and disproven.
+1. **Start from the audit** — Read `project-map.md` and the latest `.act/runs/<YYYY-MM-DD-HHMMSS>/report.md` first. Every refactoring decision must trace back to a confirmed finding (by its finding ID) in that report. Check the map's Refuted & Re-characterized Findings ledger first — never "fix" a smell that was already investigated and disproven.
 
-2. **Find boundaries, don't invent them** — Use `act analyze seams` together with `act analyze clusters`. A zero-seam result is not proof that no boundary exists when clusters are hub-collapsed or collapsed into one cluster; in that case use `top_hubs`, dampened clusters, `split_module`, and `simulate` to identify the smallest verified cut.
+2. **Find boundaries, don't invent them** — Use `act analyze seams` together with `act analyze clusters`. A zero-seam result is not proof that no boundary exists — canonical reading in the protocol's Shared Interpretation Rules (seam / hub-collapse); use dampened clusters, `split_module`, and `simulate` to identify the smallest verified cut.
 
 3. **Evaluate before cutting** — Before extracting a module, use `act analyze surface --files <files>` to measure the API surface. If the surface is too wide, the extraction will create more coupling, not less.
 
@@ -52,7 +52,7 @@ former `architectural-analysis` skill. If any doc still references that name, or
 
 ## Workflow
 
-1. Read `project-map.md` (including its Refuted ledger) and the latest `docs/act/<ts>/report.md`
+1. Read `project-map.md` (including its Refuted ledger) and the latest `.act/runs/<YYYY-MM-DD-HHMMSS>/report.md`
 2. Prioritize confirmed findings by ID: cycles > god classes > high coupling > dead code
 3. For each finding:
    a. Verify it's still present (`act analyze cycles` / `act analyze coupling`)
@@ -63,12 +63,11 @@ former `architectural-analysis` skill. If any doc still references that name, or
       predicted deltas (cycles resolved, coupling changes, violations cleared/introduced) in the
       remediation row's "Verified by" cell. For a chokepoint or refuted-ledger row that hinges
       on "is this wide module load-bearing or a pass-through?", `delete_module{file}` settles it
-      deterministically. Read `deletions.surface_consumers` first — external symbols calling or
-      extending the module's own surface (`top_consumers` names them); any non-zero count means
-      load-bearing. `surface_consumers: 0` certifies a conduit ONLY when `deletions.surface_modeled`
-      is `true` (false → UNKNOWN, never "clean"). `rewired_edges`/`severed_edges` describe the
-      file-routing side. Record the surface count + a named consumer in the "Verified by" cell
-      instead of re-arguing the deletion test by hand. Example for a planned split of a god module:
+      deterministically — read the `deletions` delta in the protocol's canonical order (Shared
+      Interpretation Rules: `surface_consumers` first, `surface_modeled` as the honesty gate,
+      then `rewired_edges`/`severed_edges`). Record the surface count + a named consumer in the
+      "Verified by" cell instead of re-arguing the deletion test by hand. Example for a planned
+      split of a god module:
 
       ```
       simulate(ops=[{op: "split_file", file: "src/core.ts", groups: [["parseUser", "validateUser"], ["formatReport"]]}])
@@ -134,13 +133,12 @@ so log it as a single remediation keyed to the finding ID. `recipe_run` is an En
 
 ## Recording Remediations
 
-Remediations go in an append-only ledger, **not** in `project-map.md`. The map is a full-state
-document that `architecture-audit` rewrites wholesale on every run — writing remediations into it
-would be clobbered on the next audit and would put two skills in conflict over one file. Keep the
-action history separate from the state document:
+Remediations go in an append-only ledger, **not** in `project-map.md` (separation rationale:
+the protocol's Artifact Directory Structure). Keep the action history separate from the state
+document:
 
 - **File:** `remediation-log.md` at the workspace root (git-tracked, sibling of `project-map.md`).
-  It must be durable, so do **not** place it under the gitignored `docs/act/<ts>/` tree.
+  It must be durable, so do **not** place it under the gitignored `.act/runs/<YYYY-MM-DD-HHMMSS>/` tree.
 - **Append only.** Never rewrite or reorder existing rows. One row per verified step.
 - **Key every row to a finding ID** from the report it resolves, so the next audit can match the
   claim against the live structure.
