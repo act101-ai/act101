@@ -18,9 +18,9 @@ Perform semantic code refactoring using act's refactor tools.
 /refactor <operation> <target> [options]
 ```
 
-## MCP Tools (6 operations — preview + undo supported)
+## MCP Tools (Refactoring group — preview + undo supported)
 
-These are available as MCP tools with full preview and history support:
+The Refactoring group — `rename`, `extract_function`, `extract_variable`, `inline`, `move_symbol`, `insert_body`, `recipe_run` — is exposed as MCP tools with full preview and history support. (`import-organize` below is a Verification-group tool, invoked the same way.) Run the `status` tool for the live list and each tool's parameter contract; the table is illustrative, not the whole surface.
 
 | Operation | Description | Example |
 |-----------|-------------|---------|
@@ -31,16 +31,16 @@ These are available as MCP tools with full preview and history support:
 | `move` | Move symbol to different file | `move src/models.ts UserService src/services/user.ts` |
 | `import-organize` | Sort and clean imports | `import-organize src/main.ts` |
 
-## CLI Operations (~160 additional operations)
+## CLI Operations
 
-These are available via the `act` CLI. See the refactoring skill's operation-catalog reference for the complete list organized by category:
+Many more operations are available via the `act` CLI, and the set is language-specific. Discover the live surface — never work from a memorized list:
 
-- **Extraction:** extract-constant, extract-class, extract-interface, extract-type
-- **Generation:** generate-constructor, generate-impl, generate-accessors, generate-builder, generate-equals, generate-hash, generate-to-string, generate-from-json, generate-to-json, generate-tests
-- **Conversions:** convert-async, convert-sync, convert-promise, convert-arrow, convert-ternary, convert-foreach, convert-template, and more
-- **Wrapping:** wrap-try-catch, wrap-if, wrap-optional, wrap-null-check
-- **Structural:** encapsulate, pull-up, push-down, flatten, delete, split, combine
-- **Language-specific:** TypeScript (17), Python (11), Dart (20), Haskell (20+), Zig (15+), Bash (15), Groovy (8), Go (6), C# (6), Swift (4), Objective-C (5), OCaml (5), SQL (5), Julia (3), Lua (3), Perl (3), R (3), VB.NET (3), Solidity (3), Modern JS/TS (11)
+```bash
+act --list-operations                      # every operation, with `languages` per op
+act --list-operations --language <lang>    # the surface for one language
+```
+
+Categories include extraction, generation, conversions, wrapping, and structural transformations, plus per-language operations. See the refactoring skill's [operation-catalog.md](../skills/refactoring/references/operation-catalog.md) discovery guide.
 
 ## Options
 

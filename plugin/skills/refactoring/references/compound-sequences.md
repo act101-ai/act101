@@ -54,21 +54,9 @@ act refactor import-organize --file src/billing.ts
 act refactor import-organize --file src/users.ts
 ```
 
-## Batch Generation for Data Models (Parallel — independent generators)
+## Batch Generation for Data Models
 
-Generators targeting the same file are independent — they add code, they don't modify each other's output.
-
-```bash
-# Base class with fields must exist in the file. Generators add code to it:
-act refactor generate-constructor TargetClass --file src/models/target.ts
-act refactor generate-accessors TargetClass --file src/models/target.ts --fields name,email,age
-act refactor generate-equals TargetClass --file src/models/target.ts
-act refactor generate-hash TargetClass --file src/models/target.ts
-act refactor generate-to-string TargetClass --file src/models/target.ts
-act refactor generate-to-json TargetClass --file src/models/target.ts
-act refactor generate-from-json TargetClass --file src/models/target.ts
-act refactor generate-builder TargetClass --file src/models/target.ts
-act refactor generate-tests TargetClass --file src/models/target.ts
-```
-
-These are independent operations — invoke them in parallel.
+Boilerplate generation (constructors, accessors, equals/hash, JSON, builders,
+tests) is the code-generation skill's ground — see its Batch Generation Pattern.
+Generators targeting the same file are independent: run them in parallel, then
+`import-organize`, then `generate-tests` last.

@@ -17,7 +17,7 @@ Reviews code for bugs, complexity, and structural issues using act's query tools
 
 ## Tools
 
-Uses the same 8 query tools as the code-explorer agent. See the code-review skill for detailed tool signatures, review workflow, and output format.
+Uses the same query tools as the code-explorer agent, discovered via `status`. See the code-review skill for the review workflow and output format.
 
 ## Review Scope Adaptation
 

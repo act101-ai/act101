@@ -14,7 +14,7 @@ Find code that is safe to delete with high confidence by requiring three indepen
 
 ## Inputs
 
-A git repo, an lcov coverage report, and an OTLP/JSON trace export from production. All overlays are MCP tools (Architecture tier).
+An lcov coverage report and an OTLP/JSON trace export from production. `coverage_overlay` and `trace_overlay` are Architecture-tier MCP tools; `analyze_dead_code` is static analysis (Free tier) — no git required by any of the three.
 
 ## Protocol
 
@@ -22,7 +22,7 @@ A git repo, an lcov coverage report, and an OTLP/JSON trace export from producti
 2. **Untested** — call `coverage_overlay` with the lcov report; a symbol with `covered: false` (or zero hits) is untested.
 3. **Unused in prod** — call `trace_overlay` with the production trace; a symbol absent from the hits (zero `span_count`) never ran in prod.
 4. **Intersect** — a symbol present in ALL THREE (statically dead AND uncovered AND untraced) is high-confidence dead. Report it first. Symbols in two of three are "probably dead — verify"; one of three is "investigate."
-5. **Caveat** — reflexion/DI/dynamic dispatch can hide real uses from static analysis; coverage and trace windows may be incomplete. State the evidence window and the `unmapped` counts so the user can judge.
+5. **Caveat** — reflection/DI/dynamic dispatch can hide real uses from static analysis; coverage and trace windows may be incomplete. State the evidence window and the `unmapped` counts so the user can judge.
 
 ## Output
 

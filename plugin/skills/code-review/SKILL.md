@@ -119,23 +119,16 @@ get_type(file="src/api.ts", line=42, column=12)
    verdict for the entire changed set. Cite its output directly; do not re-derive
    merge-safety prose from `verify_diff_semantics`, `verify_test_impact`, or
    `verify_side_effects` individually — those are the gate engine's inputs, and
-   the gate is the rule owner. The safe-to-merge skill follows the same verdict
-   rules and extends the gate workflow with post-merge validation.
+   the gate is the rule owner. The safe-to-merge skill is the gate's skill-level
+   owner — verdict semantics (MERGE / REVIEW / BLOCK / UNKNOWN), exit codes, and
+   the honest-degradation rules live there. One rule bears repeating: UNKNOWN
+   means **not-verified**, never a pass.
 
-   Verdict semantics (exit codes: 0 MERGE, 1 BLOCK, 2 REVIEW, 3 UNKNOWN, 4 error):
-   - `MERGE` — every changed function cleared all three checks
-   - `REVIEW` — at least one function needs human judgment (no automatic block)
-   - `BLOCK` — at least one function failed a check; do not merge
-   - `UNKNOWN` — verification could not complete for at least one function;
-     treat as **not-verified**, never as a pass
-
-   **Receipts:** `gate --receipts` (or `gate(receipts=true)`) writes one
-   `<id>.json` file to `.act/receipts/` per verified function. Functions whose
-   file, symbol, and span-hashes match a valid receipt are reported as
-   `pre-verified by receipt <id>` — reviewers may accept that as evidence without
-   re-running the trio. Any hash or schema mismatch discards the receipt and
-   re-verifies from scratch automatically. Emission mechanics and receipt schema
-   live in the refactor-receipt skill.
+   **Receipts:** `gate --receipts` (or `gate(receipts=true)`) writes per-function
+   receipts to `.act/receipts/`; functions matching a valid receipt are reported
+   as `pre-verified by receipt <id>` and reviewers may accept that as evidence
+   without re-running the trio. Emission mechanics, content-addressed validity,
+   and the receipt schema live in the refactor-receipt skill.
 
    **Worked example** (fixture: `auth.ts` with two working-tree changes):
 

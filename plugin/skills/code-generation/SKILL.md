@@ -10,7 +10,7 @@ description: >
 
 # Code Generation with act
 
-Generate boilerplate from existing type definitions. All generation operations are CLI-based — invoke via shell commands. This skill is the authoritative reference for code generation patterns. Other skills (`code_porting`, `architectural_refactoring`, `code_refactoring`) delegate here for boilerplate generation.
+Generate boilerplate from existing type definitions. All generation operations are CLI-based — invoke via shell commands. This skill is the authoritative reference for code generation patterns. The refactoring and architectural-refactoring skills delegate here for boilerplate generation.
 
 ## Rules
 
@@ -52,6 +52,11 @@ Generate boilerplate from existing type definitions. All generation operations a
 | `generate-operator-overloads` | Operator overloads (C++, C#, Python) | Class name |
 | `generate-rule-of-five` | Rule-of-five methods (C++) | Class name |
 
+Most generators run as `act refactor <generator> …`. Five are registry-only operations
+with no dedicated subcommand — `generate-docstring`, `generate-init`, `generate-repr`,
+`generate-operator-overloads`, `generate-rule-of-five` — invoke them via
+`act refactor-lang <generator> --file <path> --params '<json>'`.
+
 ## Batch Generation Pattern
 
 When creating a new data model with full boilerplate, **invoke generators in parallel** for maximum speed. Each generator is independent — they can all run concurrently.
@@ -82,7 +87,7 @@ act refactor generate-tests User --file src/models/user.ts
 
 ### Why batch?
 
-Each `act` invocation is fast (~50ms). But when called from an AI agent via MCP/shell, each invocation has overhead (tool call round-trip). Running 8 generators in parallel completes in wall-clock time of the slowest single operation (~100ms) instead of 8 sequential calls (~800ms + round-trip overhead).
+Each `act` invocation is fast, but each MCP/shell tool call has round-trip overhead. Running independent generators in parallel completes in the wall-clock time of the slowest single operation instead of the sum of all of them.
 
 **For agents:** When you need to generate multiple boilerplate methods for a class, invoke all independent generators in a single batch of parallel tool calls.
 
@@ -110,9 +115,9 @@ Each `act` invocation is fast (~50ms). But when called from an AI agent via MCP/
 
 ### Post-Scaffold Boilerplate (Porting Integration)
 
-When porting data types from another language (see `code_porting` skill):
+When porting data types from another language:
 
-1. Scaffold the target-language type using `port scaffold` (or write the type with fields manually)
+1. Write the target-language type with its fields (generators need the field definitions to work from)
 2. Classify: data type → generators, business logic → LLM translation
 3. Batch in parallel: all applicable generators for the data type
 4. Validate with `diagnostics`
@@ -122,12 +127,12 @@ This step produces 80–150 lines of correct, language-appropriate code per data
 
 ## When Other Skills Call This Skill
 
-- **`code_porting`:** After scaffolding a target file, classify each symbol. Data types get batch-generated here. Business logic gets LLM-translated.
-- **`architectural_refactoring`:** After extracting interfaces at seams, use `generate-impl` for implementation stubs.
-- **`code_refactoring`:** After `extract-class` creates a new type, use generators to add boilerplate.
+- **Porting workflows:** after scaffolding a target file, classify each symbol — data types get batch-generated here, business logic gets LLM-translated.
+- **architectural-refactoring:** after extracting interfaces at seams, use `generate-impl` for implementation stubs.
+- **refactoring:** after `extract-class` creates a new type, use generators to add boilerplate.
 
 ## Language-Specific Recipes
 
-See [language-recipes.md](references/language-recipes.md) for Python dataclass generation, Rust derive macros, Go struct methods, C# record patterns, and more.
+See [language-recipes.md](references/language-recipes.md) for generator discovery and the native-mechanism preference table.
 
-> **Note:** Language support is actively expanding. If a generator fails for a language, it may not yet be supported. Run `scripts/language-operation-matrix.sh` to check current status per language.
+> **Note:** Language support is registry-derived — run `act --list-operations --language <lang>` to see which generators are available. A generator absent from that output is not supported for the language.

@@ -20,11 +20,11 @@ Plans and executes multi-step refactoring operations safely.
 
 ## Tools
 
-6 refactor tools + 3 history tools + diagnostics for verification. See the refactoring skill for detailed tool signatures, workflow, and error recovery.
+The Refactoring and History tool groups, plus verification tools. Call `status` for the live surface. See the refactoring skill for detailed tool signatures, workflow, and error recovery.
 
-**Refactor:** rename, extract_function, extract_variable, inline, move_symbol, import_organize
+**Refactor:** rename, extract_function, extract_variable, inline, move_symbol, insert_body, recipe_run
 **History:** history_list, history_undo, history_redo
-**Verify:** diagnostics, skeleton, symbols
+**Verify:** diagnostics, import_organize, skeleton, symbols
 
 ## Safety Protocol
 
@@ -44,8 +44,8 @@ See the refactoring skill's compound-sequences reference for multi-step patterns
 
 ## When to Use CLI vs MCP
 
-- **MCP tools** (6 refactor operations): Use for interactive, preview-driven refactoring
-- **CLI operations** (~160 operations): Use for batch generation, language-specific transformations, and operations not exposed via MCP
+- **MCP tools** (the Refactoring group): Use for interactive, preview-driven refactoring
+- **CLI operations**: Use for batch generation, language-specific transformations, and operations not exposed via MCP — run `act --list-operations --language <lang>` for the live set
 
 CLI invocation pattern:
 ```bash

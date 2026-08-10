@@ -1,23 +1,52 @@
----
-name: analysis-protocol
-description: >
-  Shared protocol for all analysis skills — artifact structure, investigation loop,
-  depth levels, summary format, and token budget rules. Included by all five analysis
-  skills. Do not invoke this skill directly.
----
-
 # Analysis Protocol
 
-All analysis skills share this protocol. It defines the common machinery: artifact
-directory structure, investigation depth levels, the investigation loop steps, summary
-format, and token budget rules.
+Shared reference for the analysis-family skills — artifact directory structure, the
+investigation loop, depth levels, summary format, and token budget rules. Cited by
+architecture-audit, health-check, boundary-analysis, migration-assessment,
+change-impact, and security-surface (create-work-loop also cites the File-Location
+Convention below). This directory intentionally has no `SKILL.md`: the protocol is
+an include for the skills above, not an invocable skill.
+
+## File-Location Convention (normative for all act101 skills)
+
+Three rules govern every artifact path a skill prescribes. An explicit operator
+instruction or an established project convention always overrides these defaults —
+state the default, then defer.
+
+**Rule 1 — Persistent ledgers: workspace root, stable undated names, git-tracked.**
+A persistent ledger holds cross-run state: `project-map.md`, `remediation-log.md`,
+work-loop trackers (`<program>-work-loop.md`), and refuted ledgers (today a section
+of `project-map.md`; if ever split into its own file, that file follows this rule).
+Ledgers live at the workspace root under a stable, undated, canonical name. Dates
+live inside — dated log rows and entries — never in the filename.
+
+**Rule 2 — Ephemeral artifacts: default under `.act/`.**
+Ephemeral artifacts are one-shot dated outputs: run reports, raw tool JSON,
+manifests, investigation notes, specs, implementation plans, loop-cycle artifacts.
+
+- Run artifacts: `.act/runs/<YYYY-MM-DD-HHMMSS>/` (structure below), **gitignored** —
+  ensure a `.act/runs/` entry exists in the target repo's `.gitignore`.
+- Skill-prescribed specs and plans: `.act/specs/YYYY-MM-DD-<slug>.md` and
+  `.act/plans/YYYY-MM-DD-<id>-<slug>.md`, **committed** (plans are resume state;
+  trackers reference plan paths).
+- Legacy discovery: when looking for prior runs, also check the legacy `docs/act/`
+  location read-only; new runs never write there.
+- Reserved: `.act/receipts/`, `.act/baseline.json`, `.act/scan-history.jsonl`, and
+  `.act/config.toml` are act product state — never write skill artifacts there.
+
+**Rule 3 — Dating arity: exactly one dating level per ephemeral artifact path.**
+Either the filename carries a `YYYY-MM-DD-` prefix and no ancestor directory is
+date-stamped, or the filename is undated inside exactly one date-stamped directory.
+Never zero, never two. Formats: single-file artifacts use `YYYY-MM-DD-` filename
+prefixes; run directories use `YYYY-MM-DD-HHMMSS` (collision-safe for multiple runs
+a day). Persistent ledgers are exempt via Rule 1.
 
 ## Artifact Directory Structure
 
 ```
 project-map.md                     # living STATE document at workspace root, tracked in git
 remediation-log.md                 # append-only ACTION ledger at workspace root, tracked in git
-docs/act/
+.act/runs/
 └── <YYYY-MM-DD-HHMMSS>/          # timestamped run directory (gitignored)
     ├── manifest.json              # what was run, when, which tools, which skill
     ├── raw/                       # tool JSON outputs (one file per tool invocation)
@@ -31,7 +60,7 @@ docs/act/
 ```
 
 `project-map.md` lives at the workspace root and is tracked in git — it is the durable
-living document, full-rewritten by the analysis skills each run. The `docs/act/` tree holds
+living document, full-rewritten by the analysis skills each run. The `.act/runs/` tree holds
 ephemeral timestamped reports and is gitignored. Timestamped subdirectories prevent collisions
 and enable trend comparison.
 
@@ -40,7 +69,7 @@ and enable trend comparison.
 It records *actions taken* (one row per verified remediation, keyed to a finding ID), as opposed
 to the map's *current state*. Keeping the two separate avoids two skills clobbering one file:
 refactoring appends to the log; analysis skills only **read** it (in Phase 0) and fold confirmed
-remediations into the map narrative. It must stay out of the gitignored `docs/act/<ts>/` tree so
+remediations into the map narrative. It must stay out of the gitignored `.act/runs/<YYYY-MM-DD-HHMMSS>/` tree so
 it survives as a durable record.
 
 ## Investigation Depth Levels
@@ -52,11 +81,20 @@ it survives as a durable record.
 | 2 | **Investigate** | Explore + hypothesis formation, targeted confirmation, evidence chains | Boundary Analysis, Migration Assessment |
 | 3 | **Full Audit** | Investigate + cross-category synthesis, smell taxonomy, anomaly flags | Architecture Audit |
 
+Inline-default skills (change-impact, security-surface) sit outside the depth ladder —
+they follow this loop only when running in artifact mode (see each skill's artifact-mode
+section).
+
 ## The Investigation Loop
 
-### Step 1: Setup
+### Step 1: Setup (artifact-writing runs only)
 
-Create `docs/act/<YYYY-MM-DD-HHMMSS>/` and `raw/` subdirectory.
+Inline-mode runs (change-impact's default, security-surface's default) return their
+summary directly and skip artifact setup entirely — steps 1 and 6's file writes apply
+only when a run writes artifacts.
+
+Create `.act/runs/<YYYY-MM-DD-HHMMSS>/` and `raw/` subdirectory. Ensure `.act/runs/`
+is listed in the target repo's `.gitignore` (add the entry if missing).
 
 Write `manifest.json`:
 ```json
@@ -125,9 +163,42 @@ Save investigation notes to `investigation/hypothesis-N.md`.
 - Update `project-map.md` (workspace root) sections per the update rules (see each skill)
 - Return the Common Summary to the calling agent
 
+## Shared Interpretation Rules
+
+Canonical readings shared by the skills that use these tools. Skills cite this
+section instead of restating it.
+
+### Seam / hub-collapse interpretation
+
+Interpret `analyze_seams` through the `analyze_clusters` output that feeds it.
+`total_seams: 0` only means no crossing edges between the detected clusters — it is
+NOT evidence that no boundary exists. When clustering reports fewer than two non-hub
+clusters, `hub_collapse: true`, or one cluster holding the whole scope, treat seam
+output as uninformative: report the cluster artifact and investigate with dampened
+clusters (`dampen_top_k`), `split_module`, `analyze_surface`, or `simulate`.
+
+### The deletion test (delete_module) — reading order
+
+To decide whether a suspected pass-through module is a real boundary, simulate
+`delete_module{file}`: it drops the module, re-wires transitive bridges
+(`A→M→B` ⇒ `A→B`), and reports a `deletions` delta. Read it in this order:
+
+1. `surface_consumers` — external symbols that **call or extend the module's own
+   symbols** (`top_consumers` names them). A non-zero count means the module is
+   load-bearing — those dependencies can never be re-homed because the
+   callee/superclass body is deleted. Cite the count and a name or two instead of
+   arguing the deletion test in prose.
+2. `surface_modeled` — **honesty gate.** `surface_consumers: 0` is a genuine conduit
+   signal ONLY when this is `true`. When `false` the call channel was not modeled for
+   the module's grammar; the verdict is UNKNOWN, never "clean conduit" (field-access
+   consumption is not modeled at all — treat 0 with care).
+3. `rewired_edges` / `severed_edges` — the file-import routing side: high
+   `rewired_edges` with `severed_edges: 0` and `surface_consumers: 0` (modeled) is a
+   clean pass-through whose callers only routed through it.
+
 ## Common Summary Format
 
-Every skill returns this brief summary to the calling agent (not the full report):
+Artifact-writing runs return this brief summary to the calling agent (not the full report); inline-mode skills define their own summary format in their SKILL.md:
 
 ```
 ## <Skill Name>: <Verdict>
@@ -137,7 +208,7 @@ Every skill returns this brief summary to the calling agent (not the full report
 2. [critical/warning/info] finding description
 3. [critical/warning/info] finding description
 
-**Full report:** docs/act/<timestamp>/report.md
+**Full report:** .act/runs/<YYYY-MM-DD-HHMMSS>/report.md
 **Project map:** project-map.md (updated / not updated)
 **Suggested next actions:** <specific skill or manual step>
 ```
@@ -161,7 +232,7 @@ remediation pass.
 
 Not all extended tools are implemented yet. Every skill handles this gracefully:
 
-- Before dispatching, check which tools are available (call will return error if unavailable)
+- Discover availability with `status()` (tool list + tier state); treat an unavailable-tool call error as a skip
 - Unavailable tools: skip, note in `manifest.json` as `"skipped": ["tool-name"]`
 - Proceed with available tools — a partial report is better than no report
 - If a skill's must-have tools are all unavailable, inform the agent:

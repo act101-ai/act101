@@ -22,13 +22,21 @@ Most inputs are usually already in the conversation or repo. Derive what you can
 | Input | Source | Notes |
 |---|---|---|
 | Authority spec(s) | The approved spec docs this program implements | Required. More than one is fine — the tracker lists the authority chain. |
-| Tracker path | User preference or project convention | Default `docs/specs/<program>-work-loop.md`. Check for existing work-loop files to match local convention. |
+| Tracker path | User preference or project convention | Default `<program>-work-loop.md` at the repo root — a persistent ledger per the file-location convention (`../analysis-protocol/references/protocol.md`). Check for existing work-loop files to match local convention. |
 | Queue items | Spec sections/items, in execution order | One row per independently closeable unit. If the spec has explicit IDs (E1, R3…), reuse them; otherwise mint a short prefix per phase. |
 | Ordering & dependencies | Spec dependency notes, user decisions | Record them as a note under the queue, not as prose scattered through rows. |
 | Verification floor | Project test/lint/build commands (CLAUDE.md, CI config, justfile) | Per surface if the program spans surfaces (e.g., cargo for crates, vitest for a worker, repo checks for an action). |
 | Project hard rules | The project's CLAUDE.md | Inherit **verbatim** — never invent rules the project doesn't have, never drop ones it does. |
 | Exclusions | Anything from a sibling work loop that does NOT apply here | Name exclusions explicitly (e.g., "scan-score tracking excluded — specific to the remediation loop"). Silent omission looks like an oversight; named exclusion is a decision. |
-| Workspace rules | Branch/worktree/concurrency facts | E.g., "work stays on the current branch; a concurrent agent shares this checkout — wait out lock contention." Branch/merge/PR decisions belong to the user unless they have said otherwise. |
+| Workspace rules | Branch/worktree/concurrency facts | E.g., "a concurrent agent shares this checkout — wait out lock contention." Branch & PR flow follows the rules below. |
+
+**Branch & PR rules** (defaults; an operator instruction always wins):
+
+1. Defer to operator instructions at all times — an explicit instruction about branches, merges, or PRs overrides everything below.
+2. Absent instructions: on the default branch (main/master) → create a work branch before the first commit; already on a non-default branch → keep working in it.
+3. At work-loop completion, default to opening a PR for operator review. Never merge except by explicit operator request.
+
+Throughout this skill: **operator instruction > project convention > skill default** — every default here is subordinate to that order.
 
 ### 2. Generate the tracker
 
@@ -54,12 +62,33 @@ Commit the tracker as its own change (or together with the state change it recor
 
 These are the load-bearing behaviors the template encodes — understand them so you can adapt wording without breaking them:
 
-- **Plan → implement → review per item.** `TODO` rows get a written plan (via the project's planning skill if present) before any code; `PLANNED` rows execute the plan with checkboxes ticked as they complete; before an item closes, its changes get a review pass, and review findings are either fixed in-item or captured as F-rows — never noted-and-ignored.
+- **Plan → implement → review per item.** `TODO` rows get a written plan (via the project's planning skill if present, else per "Planning an item" below) before any code; `PLANNED` rows execute the plan (via the project's execution skill(s) if present, else per "Executing an item" below) with checkboxes ticked as they complete; before an item closes, its changes get a review pass, and review findings are either fixed in-item or captured as F-rows — never noted-and-ignored.
 - **Premise re-verification.** Specs record a baseline that drifts. Resuming sessions verify the spec's premises against live code before acting, and record drift as a dated spec amendment. This is the defense against confidently implementing against a world that no longer exists.
 - **Found-issue discipline.** Any defect discovered mid-item is in scope — nothing is "pre-existing", nothing is parked in a follow-ups list. Blocking issues are fixed inside the item; non-blocking ones get a dated spec amendment plus an `F-n` queue row carrying the same closing discipline as planned rows. This is what keeps a long program from accumulating a shadow backlog nobody owns.
 - **Evidence-gated closing.** A row reaches `DONE` only when every acceptance criterion in its spec section passes **with shown output** — the verification floor actually run, not asserted. "It should pass" closes nothing.
 - **Same-commit state updates.** The queue row changes in the same commit as the work it records. This is the idempotency anchor: any interruption leaves the tracker accurately describing the last committed state.
 - **One item at a time.** An item fully closes before the next begins. Parallelism, when wanted, is a user decision recorded in the tracker's ordering notes — not an agent improvisation.
+- **Operator-owned branch/PR flow.** The Branch & PR rules above are encoded in the tracker's resume protocol: defer to operator instructions at all times; absent them, branch off the default branch or stay on the current one; open a PR at completion, never merge except by operator request.
+
+## Planning an item (`TODO` → `PLANNED`)
+
+If the project has its own planning skill, use it — its conventions win. Otherwise the plan must stand alone for an implementer with zero project context:
+
+- **One plan file per queue item** at the tracker's plans path (default `.act/plans/YYYY-MM-DD-<id>-<slug>.md`, committed — plans are resume state).
+- **Header:** the goal in one sentence, the spec section it implements, and the global constraints that bind every task (verification floor, project hard rules) — copied exactly, never paraphrased.
+- **Bite-sized tasks:** each task is the smallest unit with its own verify cycle — write the failing check, show it fail, implement, show it pass, commit. Every step names exact file paths and complete content or commands, with the expected output of each verification. "Add appropriate handling", "similar to task N", and TBD/TODO placeholders are plan failures.
+- **Interfaces between tasks:** when a later task consumes what an earlier one produces, both tasks state the exact names and signatures — an implementer sees only their own task.
+- **Self-review before committing:** walk the spec section once more — every requirement maps to a task; no placeholder text survives; names used in later tasks match their earlier definitions.
+
+## Executing an item (`PLANNED` → `DONE`)
+
+If the project has its own execution skill(s), use them. Otherwise:
+
+- **Follow the plan exactly**, ticking checkboxes in the plan file as steps complete — the checkboxes are the fine-grained resume state.
+- **Run every verification as written and read its actual output.** A step is done when its check passed, not when its code is written.
+- **Stop when blocked; never guess.** An unclear instruction, a missing dependency, a repeatedly failing verification, or a plan that contradicts live code → set `BLOCKED(reason)` on the row, record what is needed, and surface it. Pushing through a broken premise creates work that must be undone.
+- **Subagent execution** (when the session runs subagents): one fresh subagent per task, dispatched sequentially — never in parallel on one checkout. Each dispatch carries the task's full text, the interfaces it touches, and the global constraints (not the session's history), plus an output contract: what the report must contain (status, commits, verification output). Review each task's diff against its task text before dispatching the next; run one whole-item review before closing the row.
+- **Review before closing** is tracker rule 4: findings are fixed in-item or captured as F-rows — never noted-and-ignored.
 
 ## Variant: the quality loop (the architecture ratchet)
 

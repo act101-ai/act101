@@ -12,7 +12,7 @@
       "name": "act101",
       "source": "./plugin",
       "description": "AST-aware code transformer for AI agents. 140+ refactoring operations across 100+ languages with undo/redo, preview mode, and intelligent guardrails.",
-      "version": "2.1.0",
+      "version": "2.2.0",
       "author": {
         "name": "Kage Martin",
         "url": "https://github.com/act101-ai"

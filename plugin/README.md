@@ -1,14 +1,12 @@
 # act101 Plugin
 
-AST-aware code transformer for AI agents. 17 MCP tools for code analysis and refactoring across 40 languages.
+AST-aware code transformer for AI agents. Analysis, refactoring, and verification over MCP, across 160+ grammars.
 
 ## Features
 
-- **8 query tools**: status, skeleton, symbols, diagnostics, references, callers, definition, get_type
-- **6 refactor tools**: rename, extract_function, extract_variable, inline, move_symbol, import_organize
-- **3 history tools**: history_list, history_undo, history_redo
-- **Preview mode**: See changes before applying
-- **42 languages**: TypeScript, JavaScript, TSX, Python, Rust, Go, C, C++, CUDA, C#, F#, Java, Kotlin, Swift, Ruby, PHP, Haskell, Zig, Lua, SQL, Elixir, Dart, Bash, Objective-C, Scala, Groovy, Perl, Pascal, R, Erlang, VB.NET, Clojure, Julia, OCaml, PowerShell, Solidity, Common Lisp, COBOL, V, JSON, CSS, Svelte
+- **Tool groups**: Exploration, Navigation, Understanding, Refactoring, Verification, Architecture, Porting, History — run the `status` tool for the live surface
+- **Preview mode**: See changes before applying, with full undo/redo history
+- **160+ grammars**: from TypeScript, Python, Rust, Go, and Java to representational formats like JSON, YAML, and Markdown
 
 ## Installation
 
@@ -55,22 +53,30 @@ release download, then install the Zed extension. The extension starts
 
 ## Skills
 
-- **Code Review** — Analyze code for bugs, complexity, unused symbols, structural issues
-- **Refactoring** — Semantic code transformations with preview and undo
-- **Codebase Analysis** — Systematic quality audit with prioritized recommendations
-- **Code Generation** — Batch generation of constructors, accessors, builders, serialization
-- **Security Surface** — AppSec report: dangerous constructs, secret-touching code, and source→sink taint flows (Teams)
-- **Verify Refactor** — Confirm a refactor preserved behavior: contract, side-effect, and CFG-equivalence checks across two versions of a function (Pro)
-- **Where Bugs Live** — Compose churn_hotspots × analyze_hotspots × co_change_clusters × ownership_map into a ranked, explained defect-risk list (Teams)
-- **Onboarding Map** — Compose repo_outline + analyze_entry_points + churn_hotspots + ownership_map into a guided reading order with risk flags (Teams)
-- **Dead in Production** — Compose analyze_dead_code ∩ coverage_overlay ∩ trace_overlay into a ranked safe-to-delete list (Teams)
-- **Hot Path Refactor** — Compose profile_overlay + analyze_hotspots + analyze_coupling into a ranked refactor-priority list (hot × hard intersections first; Teams)
-- **Safe to Merge** — Compose verify_diff_semantics + verify_test_impact + verify_side_effects into a merge / review / block verdict (Pro)
-- **Refactor Receipt** — Compose verify_diff_semantics + verify_side_effects + verify_test_impact + verify_contract_preserved into an audit artifact proving a refactor preserved behavior (Pro)
-- **Agent Safety Audit** — Compose secret_surface + taint_flow + analyze_impact + analyze_surface into an agent-edit safety report (Teams)
-- **Architecture Audit Plus** — The architecture audit enriched with coverage_overlay + churn_hotspots + co_change_clusters + ownership_map — runtime and git evidence on top of structure (Teams)
-- **Port Verify** — Compose verify_behavioral_equivalence (scope=port) + verify_port_parity + port_inventory drift into a port-correctness gate (Enterprise)
-- **Migration Readiness Plus** — The migration assessment enriched with taint_flow + secret_surface + unsafe_surface + coverage_overlay + churn_hotspots + ownership_map (Enterprise)
+One entry per directory in `skills/`; each skill's own file carries its tier and full usage.
+
+- `agent-safety-audit` — Audit whether an AI agent edit is safe: secret surface, taint flow, change impact, and API surface composed into a safety report
+- `analysis-protocol` — Shared analysis-protocol reference used by the analysis skills (not directly invocable; no SKILL.md by design)
+- `architectural-refactoring` — Execute structural decompositions from an architectural analysis report: break cycles, split god classes, reduce coupling
+- `architecture-audit` — Comprehensive architectural overview: structure, health, patterns, prioritized findings
+- `boundary-analysis` — Find extraction candidates and analyze module boundaries before decomposing a component
+- `change-impact` — "What breaks if I change X?" — fast impact assessment before modifying a file or symbol
+- `code-generation` — Batch-generate boilerplate (constructors, accessors, builders, equality, serialization) from existing types
+- `code-navigation` — Traverse large repositories efficiently: explore unfamiliar code, map dependencies, understand API surfaces
+- `code-review` — Review code for bugs, complexity, unused symbols, and structural issues using AST-aware analysis
+- `create-work-loop` — Generate a resumable work-loop tracker that drives a large program through plan → implement → review cycles
+- `dead-in-production` — Safely remove code: statically unreferenced ∩ never covered by tests ∩ never executed in production
+- `health-check` — Trend-aware code-health snapshot: what's getting worse, periodic quality check
+- `hot-path-refactor` — Rank refactor targets by runtime profile hotness × static complexity and coupling
+- `migration-assessment` — Assess migration/port readiness: what makes this codebase hard to rewrite
+- `onboarding-map` — Guided reading order for an unfamiliar codebase, annotated with ownership and risk
+- `port-verify` — Gate a cross-language port for correctness: behavioral equivalence, contract parity, manifest drift
+- `refactor-receipt` — Emit durable content-addressed receipts proving a refactor was verified
+- `refactoring` — Semantic refactoring with preview and undo: rename, extract, inline, move
+- `safe-to-merge` — Deterministic merge verdict (MERGE / REVIEW / BLOCK / UNKNOWN) over every changed function via `act gate`
+- `security-surface` — AppSec surface report: dangerous constructs, secret-touching code, source→sink taint flows
+- `verify-refactor` — Verify a refactor preserved behavior: contract, side-effect, and CFG-equivalence checks
+- `where-bugs-live` — Find the riskiest code by combining churn, complexity, co-change coupling, and ownership
 
 ## Commands
 
@@ -80,4 +86,4 @@ release download, then install the Zed extension. The extension starts
 
 ## Tool Reference
 
-See [TOOLS.md](TOOLS.md) for complete tool signatures and parameters.
+See [TOOLS.md](TOOLS.md) for the tool contract, conventions, and discovery flow.

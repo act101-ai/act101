@@ -14,16 +14,14 @@ the composition of the four named tools below.
 ## Honesty caveat (read first)
 
 Every dimension is AST/heuristic. `secret_surface`, `taint_flow`, and
-`unsafe`-style scans report `modeled_kinds`; an empty `modeled_kinds` for the
-file's grammar means that dimension is **not covered** — that is "no evidence,"
-NOT "all clear." Read `modeled_kinds` per call — per the COVERAGE LAW taint (and
-the unsafe/secret scans) apply to **every applicable tier-1+ grammar**, so there
-is no fixed "supported" grammar list. A non-empty mask for a dimension means it
-**was modeled** for this grammar (an empty finding is then genuine — e.g. no
-source→sink path); an **empty/absent** mask means that dimension was **not
-modeled** — "no evidence," not "clear," and a coverage gap to close. Always name
-the language and the uncovered dimensions. Verdicts are advisory, not a security
-guarantee.
+`unsafe`-style scans report `modeled_kinds` — read it per call. Coverage rule:
+taint and the unsafe/secret scans apply to **every applicable tier-1+ grammar**,
+so there is no fixed "supported" grammar list. A non-empty mask for a dimension
+means it **was modeled** for this grammar — an empty finding is then genuine
+(e.g. no source→sink path). An **empty/absent** mask means the dimension was
+**not modeled** — "no evidence," not "all clear," and a coverage gap to close.
+Always name the language and the uncovered dimensions. Verdicts are advisory,
+not a security guarantee.
 
 ## Tier
 

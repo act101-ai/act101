@@ -8,22 +8,23 @@
 
 ```text
 plugin/
+├── .claude-plugin/
+│   └── plugin.json    # package manifest (CI-owned; variants in .codex-plugin/, .cursor-plugin/)
 ├── README.md          # install and usage overview
-├── TOOLS.md           # canonical MCP tool signatures and semantics
+├── TOOLS.md           # MCP tool contract, conventions, and discovery
 ├── agents/            # agent workflows
 ├── commands/          # slash command docs
-├── skills/            # skill docs
-└── plugin.json        # package metadata
+└── skills/            # skill docs
 ```
 
 ## WHERE TO LOOK
 
 | Task | Location | Notes |
 |------|----------|-------|
-| Tool contract | `TOOLS.md` | Preview/commit behavior, LSP needs, file-creation rules. |
+| Tool contract | `TOOLS.md` | Discovery flow, toolsets, preview/LSP/file-creation conventions. |
 | Explorer/review workflow | `agents/code-explorer.md`, `commands/explore.md`, `commands/review.md` | Parser-only first, LSP second where needed. |
 | Refactor workflow | `commands/refactor.md` | Preview/apply/undo sequence. |
-| Packaging | `plugin.json`, root plugin scripts | Keep metadata and generated packages in sync. |
+| Packaging | `.claude-plugin/plugin.json` (+ per-client variants), root plugin scripts | Keep metadata and generated packages in sync. |
 
 ## CONVENTIONS
 

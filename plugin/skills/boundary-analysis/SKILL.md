@@ -16,6 +16,15 @@ See `../analysis-protocol/references/protocol.md` for: artifact directory struct
 the investigation loop, depth levels, summary format, token budget rules, and project
 map structure. Read that document before proceeding.
 
+## Phase 0: Refuted-Ledger Read (before any tool dispatch)
+
+If `project-map.md` exists at the workspace root, read its
+`## Refuted & Re-characterized Findings` ledger first (protocol mandate for depth-2+
+skills). Do not re-investigate a refuted hypothesis unless this run surfaces new
+contradicting evidence — carry it as "previously refuted (date), no new evidence".
+During synthesis, add each newly refuted or re-characterized hypothesis from this
+run's investigation to that ledger with the disproving evidence.
+
 ## Phase 1: Parallel Tool Dispatch
 
 Dispatch all available tools in a **single parallel batch**.
@@ -31,10 +40,9 @@ structured summary.
 
 If both must-have tools are unavailable, report that and stop.
 
-Interpret `analyze_seams` through `analyze_clusters`. Empty seams are actionable only
-when clustering produced at least two non-hub clusters. If clustering is hub-collapsed
-or collapsed into one cluster, treat seam output as uninformative and investigate with
-dampened clusters, `split_module`, `analyze_surface`, or `simulate`.
+Interpret `analyze_seams` through `analyze_clusters` — canonical reading in the
+protocol's Shared Interpretation Rules (seam / hub-collapse): empty seams are
+actionable only when clustering produced at least two non-hub clusters.
 
 **Extended tools (use if available, skip and note in manifest if not):**
 
@@ -154,25 +162,13 @@ writes disk. Revise the cut if it introduces violations or fails to resolve the 
 (Delta-field names match the architectural-refactoring skill's simulate step.)
 
 To decide whether a suspected pass-through module is a real boundary at all — the
-deletion test — simulate `delete_module{file}`. It drops the module and re-wires
-transitive bridges (`A→M→B` ⇒ `A→B`), then reports a `deletions` delta. Read it in
-this order:
-
-1. `surface_consumers` — external symbols that **call or extend the module's own
-   symbols** (the load-bearing core; `top_consumers` names them). A non-zero count
-   means the module is load-bearing and earns its keep — those dependencies can
-   never be re-homed because the callee/superclass body is deleted. Cite the count
-   and a name or two instead of arguing the deletion test in prose.
-2. `surface_modeled` — **honesty gate.** `surface_consumers: 0` is a genuine
-   conduit signal ONLY when this is `true`. When `false` the call channel was not
-   modeled for the module's grammar; the verdict is UNKNOWN, never "clean conduit"
-   (field-access consumption is not modeled at all — treat 0 with care).
-3. `rewired_edges` / `severed_edges` — the file-import routing side: high
-   `rewired_edges` with `severed_edges: 0` and `surface_consumers: 0` (modeled) is
-   a clean pass-through whose callers only routed through it.
+deletion test — simulate `delete_module{file}` and read the `deletions` delta in the
+protocol's canonical order (Shared Interpretation Rules: `surface_consumers` first,
+`surface_modeled` as the honesty gate, then `rewired_edges`/`severed_edges`).
 ```
 
 ## Project Map Updates
 
 Updates **"Module Map"**, **"Layer Architecture"**, and **"Key Boundaries"** sections.
-Appends to the Analysis History table.
+Adds newly refuted / re-characterized hypotheses to the **Refuted & Re-characterized
+Findings** ledger (see Phase 0). Appends to the Analysis History table.

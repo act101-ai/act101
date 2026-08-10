@@ -41,4 +41,4 @@
 **Recovery:**
 - History is session-scoped — it resets when the MCP server restarts
 - If the server restarted between refactor and undo, manual revert via git is needed
-- Always commit or stash before large refactoring sessions
+- Start large refactoring sessions from a clean commit point (how is the operator's call — follow the project's git conventions)

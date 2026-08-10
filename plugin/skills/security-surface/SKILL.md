@@ -15,9 +15,9 @@ description: >
 | Tool | Purpose | MCP call | Tier |
 |------|---------|----------|------|
 | `unsafe_surface` | Dangerous constructs (eval, raw SQL, FFI, unsafe blocks, reflection, deserialize) | `unsafe_surface` with `file: <F>` | Free |
-| `secret_surface` | Credential params, tokens, signing keys, env reads, hardcoded secrets | `secret_surface` with `file: <F>` | Engineer |
+| `secret_surface` | Credential params, tokens, signing keys, env reads, hardcoded secrets | `secret_surface` with `file: <F>` | Engineering |
 | `taint_flow` | Source→sink data-flow paths from an entry function | `taint_flow` with `target: <fn>, file: <F>` | Architecture |
-| `analyze_surface` | API surface area at the module boundary (context) | `analyze_surface` | Engineer |
+| `analyze_surface` | API surface area at the module boundary (context) | `analyze_surface` | Engineering |
 | `scan` | Repo-wide superset: credential (pattern + entropy) / AI-config-backdoor / MCP-RCE / typosquat-dependency / Actions-injection / LLM-output-to-exec / prompt-injection-surface detectors across the whole tree + Health Score | `scan` with `root: <repo>` | Free (public) / scan entitlement (private) |
 
 **Tier:** Architecture (the max of composed op tiers; `taint_flow` gates it).
@@ -47,9 +47,8 @@ verdict: "taint flows not analyzed (Architecture tier required)."
 ## Honesty caveat (read first)
 
 `taint_flow` coverage is reported per call in `modeled_kinds` — read it; never
-assume a fixed list of "supported" grammars. Per the COVERAGE LAW taint applies
-to **every applicable tier-1+ grammar**, so there is no language subset to
-enumerate:
+assume a fixed list of "supported" grammars. Coverage rule: taint applies to
+**every applicable tier-1+ grammar** — there is no language subset to enumerate:
 
 - A non-empty `modeled_kinds:{taint}` means taint **was modeled** for this
   grammar; an empty `flows` result is then a genuine **"no source→sink flow
@@ -92,7 +91,7 @@ incomplete — unresolved callees: …").
 ## Artifact mode
 Inline by default (return the summary to the caller, no files). For human-initiated
 audits or a High/Critical verdict, follow the artifact protocol in
-`../analysis-protocol/references/protocol.md` (write `docs/act/<timestamp>/` with
+`../analysis-protocol/references/protocol.md` (write `.act/runs/<YYYY-MM-DD-HHMMSS>/` with
 `manifest.json`, `raw/*.json`, `report.md`).
 
 ## Project Map Updates

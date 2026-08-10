@@ -29,21 +29,11 @@
 2. Use `status()` to see the workspace root
 3. Paths should be relative to workspace root, not absolute
 
-## Symbol Not Found
+## Symbol Not Found / Ambiguous Symbol
 
-**Symptom:** `references` or `callers` returns empty results for a symbol you know exists.
-
-**Recovery:**
-1. Use `symbols(file="path")` to list all symbols in the file
-2. Check exact spelling and case
-3. Some symbols are anonymous (arrow functions, lambdas) — use `skeleton` to find them
-4. If the symbol is in a different file, provide the `file` parameter to scope the search
-
-## Ambiguous Symbol
-
-**Symptom:** Multiple results when you expected one specific symbol.
-
-**Recovery:**
-1. Provide the `file` parameter to narrow scope
-2. For `definition`, provide exact `line` and `column` position
-3. Use `skeleton` to find the exact location first, then use precise coordinates
+Shared op-level recovery — see the refactoring skill's
+`references/error-recovery.md` (list symbols with `symbols(file=…)`, check
+spelling/case, disambiguate with `file`/`line`/`column`, scope with `references`
+first). Review-specific addition: some symbols are anonymous (arrow functions,
+lambdas) — `references`/`callers` return nothing for them; use `skeleton` to find
+and cite them by location instead.
