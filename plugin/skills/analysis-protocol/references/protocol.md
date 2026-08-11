@@ -2,9 +2,9 @@
 
 Shared reference for the analysis-family skills — artifact directory structure, the
 investigation loop, depth levels, summary format, and token budget rules. Cited by
-architecture-audit, health-check, boundary-analysis, migration-assessment,
-change-impact, and security-surface (create-work-loop also cites the File-Location
-Convention below). This directory intentionally has no `SKILL.md`: the protocol is
+architecture-audit, health-check, boundary-analysis, deepening-survey,
+migration-assessment, change-impact, and security-surface (create-work-loop also
+cites the File-Location Convention below). This directory intentionally has no `SKILL.md`: the protocol is
 an include for the skills above, not an invocable skill.
 
 ## File-Location Convention (normative for all act101 skills)
@@ -78,7 +78,7 @@ it survives as a durable record.
 |-------|------|-------------|---------|
 | 0 | **Collect** | Run tools, save raw output, produce summary | Change Impact |
 | 1 | **Explore** | Collect + one round of follow-up on top findings | Health Check |
-| 2 | **Investigate** | Explore + hypothesis formation, targeted confirmation, evidence chains | Boundary Analysis, Migration Assessment |
+| 2 | **Investigate** | Explore + hypothesis formation, targeted confirmation, evidence chains | Boundary Analysis, Deepening Survey, Migration Assessment |
 | 3 | **Full Audit** | Investigate + cross-category synthesis, smell taxonomy, anomaly flags | Architecture Audit |
 
 Inline-default skills (change-impact, security-surface) sit outside the depth ladder —
