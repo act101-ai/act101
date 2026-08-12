@@ -5,7 +5,7 @@
 
 [package]
 name = "zed_act101"
-version = "2.2.1"
+version = "2.2.2"
 edition = "2021"
 publish = false
 license = "MIT"
