@@ -21,7 +21,7 @@
 #   curl -sSL https://act101.ai/install.sh | sh -s uninstall
 
 # ACT_DEFAULT_VERSION is substituted at release time by the build-installers job.
-: "${ACT_DEFAULT_VERSION:=v2.2.2}"
+: "${ACT_DEFAULT_VERSION:=v2.2.3}"
 : "${ACT_GITHUB_REPO:=act101-ai/act101}"
 : "${ACT_CHANNEL:=stable}"
 

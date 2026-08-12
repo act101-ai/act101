@@ -1,7 +1,7 @@
 id = "act101"
 name = "act101"
 description = "AST-aware code transformer for AI agents — the act101 MCP server: code analysis and refactoring across 100+ languages with undo/redo, preview mode, and intelligent guardrails."
-version = "2.2.2"
+version = "2.2.3"
 schema_version = 1
 authors = ["Kage Martin <https://github.com/act101-ai>"]
 repository = "https://github.com/act101-ai/act101"
