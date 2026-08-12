@@ -39,10 +39,13 @@ named above; `status` itself reports the other eight groups.)
 
 ## Toolsets (progressive disclosure)
 
-- Default: every toolset is enabled — the full surface is advertised.
-- A deployment can restrict what is advertised:
+- Default: Exploration, Navigation and Refactoring — 17 tools, ~4,000 tokens of
+  definitions, against ~23,000 for the whole catalog. The long tail
+  (Architecture, Verification, Understanding, Porting, History) is one
+  `enable_toolset` call away, and that tool's description names every group.
+- A deployment can pin the advertised groups up front:
   `act mcp serve --toolsets "Navigation,Architecture"` advertises only those
-  groups (plus the always-on pair).
+  groups (plus the always-on pair). `--toolsets all` advertises everything.
 - A restricted session widens itself at runtime: call `enable_toolset` with
   `toolsets: ["<Group>", …]` (group names from `status`) — the server emits
   `tools/list_changed` so the client re-lists.
