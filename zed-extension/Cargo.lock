@@ -740,7 +740,7 @@ dependencies = [
 
 [[package]]
 name = "zed_act101"
-version = "2.2.7"
+version = "2.2.9"
 dependencies = [
  "zed_extension_api",
 ]
