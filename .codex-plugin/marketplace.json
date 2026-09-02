@@ -6,7 +6,7 @@
   "plugins": [
     {
       "name": "act101",
-      "version": "2.2.9",
+      "version": "2.3.0",
       "source": {
         "source": "local",
         "path": "./plugin"
