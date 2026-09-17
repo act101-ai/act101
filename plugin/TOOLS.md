@@ -65,7 +65,13 @@ named above; `status` itself reports the other eight groups.)
   `symbols`, …) work immediately, and LSP-backed tools degrade gracefully to
   tree-sitter where possible — check each tool's own description rather than
   assuming.
-- **Positions are 1-indexed:** lines and columns both start at 1.
+- **Positions are 1-indexed:** lines and columns both start at 1. Refactor
+  tool previews summarize each edit as `{file, line, old_text, new_text}`:
+  per-edit file, 1-indexed line, and the replaced/replacement text. The
+  three-coordinate edit locations (`line`, `column`, `byte_offset`, with
+  `byte_offset` canonical) are the CLI preview JSON's contract — see
+  "Edit Coordinates in Refactor Payloads" in act101's
+  `docs/04_CLI_INTERFACE.md`.
 - **File creation:** operations create destination files (and parent
   directories) automatically — never pre-create a file for `move_symbol`,
   `extract-class`, `extract-interface`, or any destination-creating operation.

@@ -1,33 +1,47 @@
 ---
 name: dead-in-production
-description: Use when you want to safely remove code — finds symbols that are statically unreferenced, never covered by tests, and never executed in production, by intersecting dead-code, coverage, and trace evidence.
+description: Use when removing code and a static dead-code signal alone feels risky. Finds symbols that are statically unreferenced, never covered by tests, and never executed in production.
 ---
 
 # Dead in Production
 
-Find code that is safe to delete with high confidence by requiring three independent signals to agree: it is statically unreachable, untested, and never runs in production.
+Find code that is safe to delete by requiring three independent signals to agree:
+statically unreachable, untested, and never run in production.
 
 ## When to use
 
-- Cleanup / dead-code removal where a static signal alone feels risky.
+- Cleanup or dead-code removal where the static signal alone is not enough.
 - Shrinking a service before a refactor or migration.
 
 ## Inputs
 
-An lcov coverage report and an OTLP/JSON trace export from production. `coverage_overlay` and `trace_overlay` are Architecture-tier MCP tools; `analyze_dead_code` is static analysis (Free tier) — no git required by any of the three.
+An lcov coverage report and an OTLP/JSON trace export from production.
+`coverage_overlay` and `trace_overlay` are Architecture tier; `analyze_dead_code` is
+static (Free). None of the three needs git.
 
 ## Protocol
 
-1. **Static** — call `analyze_dead_code` to find symbols unreferenced from any entry point.
-2. **Untested** — call `coverage_overlay` with the lcov report; a symbol with `covered: false` (or zero hits) is untested.
-3. **Unused in prod** — call `trace_overlay` with the production trace; a symbol absent from the hits (zero `span_count`) never ran in prod.
-4. **Intersect** — a symbol present in ALL THREE (statically dead AND uncovered AND untraced) is high-confidence dead. Report it first. Symbols in two of three are "probably dead — verify"; one of three is "investigate."
-5. **Caveat** — reflection/DI/dynamic dispatch can hide real uses from static analysis; coverage and trace windows may be incomplete. State the evidence window and the `unmapped` counts so the user can judge.
+1. **Static**: `analyze_dead_code` finds symbols unreferenced from any entry point.
+2. **Untested**: `coverage_overlay` with the lcov report; `covered: false` or zero hits
+   means untested.
+3. **Unused in prod**: `trace_overlay` with the production trace; zero `span_count`
+   means it never ran in the captured window.
+4. **Intersect**: a symbol that is statically dead, uncovered, and untraced is
+   high-confidence dead and leads the report. Two of three is "probably dead, verify"; one of three is
+   "investigate".
+5. **Caveat**: reflection, DI, and dynamic dispatch hide real uses from static
+   analysis, and coverage and trace windows can be incomplete. State the evidence
+   window and the `unmapped` counts.
 
 ## Output
 
-A ranked deletion list: high-confidence (3/3) first, then 2/3 with the missing signal named, then 1/3. For each, cite the symbol id and which signals fired. Include the trace/coverage `unmapped` counts and the trace time window as caveats.
+A ranked deletion list: 3/3 first, then 2/3 with the missing signal named, then 1/3.
+For each entry cite the symbol id and which signals fired. Close with the trace and
+coverage `unmapped` counts and the trace time window.
 
-## Honesty
+## Coverage
 
-Respect `modeled_kinds` and `unmapped`: a symbol that mapped to no coverage/trace fact is "no evidence," not "dead." Never recommend deleting on a single signal. Coverage/trace are facts about the captured window only.
+Read `modeled_kinds` and `unmapped` on every overlay result: a symbol that mapped
+to no coverage or trace fact is "no evidence", not "dead".
+Deletion recommendations need at least two agreeing signals. Coverage and trace
+describe the captured window only.
