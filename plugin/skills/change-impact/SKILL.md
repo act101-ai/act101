@@ -1,74 +1,56 @@
 ---
 name: change-impact
-description: >
-  Use before modifying a file or symbol, or when asked "what breaks if I change X?".
-  Depth 0 — fast, no follow-up queries, returns immediately. Two modes: inline (no
-  artifacts, default for agent-initiated use) and artifact (writes to .act/runs/,
-  triggered for human-initiated requests or Critical risk verdicts).
+description: Use before modifying a file or symbol, or when asked "what breaks if I change X?". Returns a blast-radius, test-coverage, and cycle-risk verdict immediately, with no follow-up investigation.
 ---
 
 # Change Impact
 
-**Depth:** Level 0 (Collect).
-
-See `../analysis-protocol/references/protocol.md` for: artifact directory structure,
-the investigation loop, depth levels, summary format, token budget rules, and project
-map structure.
+**Depth:** Level 0 (Collect). Read `../analysis-protocol/references/protocol.md` for
+the artifact layout and project-map structure; the summary format is defined below.
 
 ## Tools
 
-| Tool | Purpose | MCP call | Tier |
-|------|---------|----------|------|
-| `analyze_impact` (file mode) | Blast radius — files that depend on target (R1) | `analyze_impact` with `target: <file>` | Architecture |
-| `analyze_impact` (symbol mode) | Transitive callers of a function symbol | `analyze_impact` with `target: <file>` and `symbol: <name>` | Architecture |
+| Tool | Purpose | Call | Tier |
+|------|---------|------|------|
+| `analyze_impact` (file mode) | Files that depend on the target, directly and transitively (R1) | `analyze_impact` with `target: <file>` | Free |
+| `analyze_impact` (symbol mode) | Transitive callers of one function | `analyze_impact` with `target: <file>` and `symbol: <name>` | Architecture |
 | `analyze_test_gaps` | Is the target tested? (R5) | `analyze_test_gaps` | Architecture |
 | `analyze_cycle_risk` | Is the target in a risky cycle? (R6) | `analyze_cycle_risk` | Architecture |
 
-All four are Architecture tier — `analyze_impact` in both modes (there is no Free
-file-mode teaser).
+**Symbol mode** (PR review, or before renaming or changing a signature): run
+`skeleton` to confirm the function exists in the file, then call symbol mode. Append
+`::<line>` to `symbol` to disambiguate overloads (`symbol: "process::42"`). Symbol
+mode is syntactic-floor analysis and needs no LSP. Read `confidence`,
+`modeled_kinds`, and `unresolved` in the result: they state where the analysis
+stopped.
 
-**Symbol mode workflow (Architecture):** For PR review or before renaming/changing a function signature,
-run `skeleton` to confirm the function exists in the file, then use symbol mode to get the full
-transitive caller chain. Append `::<line>` to `symbol` to disambiguate overloads
-(e.g. `symbol: "process::42"`). Symbol mode uses syntactic-floor analysis; LSP is not required.
-The `confidence`, `modeled_kinds`, and `unresolved` fields in the result are honesty signals —
-review them to understand gaps in the analysis.
+If `analyze_test_gaps` or `analyze_cycle_risk` is unavailable, run `analyze_impact`
+alone and name the skipped tool in the verdict. If `analyze_impact` is unavailable,
+report that and stop.
 
-If `analyze_test_gaps` or `analyze_cycle_risk` are unavailable: run `analyze_impact`
-only. Note which tools were skipped in the verdict and caveat accordingly.
+## Two modes
 
-If `analyze_impact` is unavailable: report that and stop — no useful verdict possible.
+**Inline** (default for agent-initiated use): return the summary below to the caller
+and write nothing to disk.
 
-## Two Modes
+**Artifact** (human-initiated requests such as "analyze impact of changing X", or
+any Critical verdict, even when the run started inline): follow the protocol's
+artifact steps, writing `.act/runs/<YYYY-MM-DD-HHMMSS>/` with `manifest.json`,
+`raw/*.json`, and `report.md`.
 
-**Inline mode** (default for agent-initiated use):
-- Returns the summary directly to the calling agent
-- Does NOT write artifacts to disk (the protocol's Step 1 setup applies to artifact-writing runs only)
-- Use when an agent needs a quick risk check before making a change
-
-**Artifact mode** (for human-initiated requests, or when verdict is Critical):
-- Follows the full artifact protocol: create `.act/runs/<YYYY-MM-DD-HHMMSS>/`, write
-  `manifest.json`, save `raw/*.json`, write `report.md`
-- Triggered automatically when verdict is **Critical**, even if initially invoked inline
-- Triggered by explicit user request (e.g., "analyze impact of changing X")
-
-## Risk Verdict
-
-Compute from tool outputs:
+## Risk verdict
 
 | Verdict | Criteria |
 |---------|----------|
-| **Low** | Blast radius < 5 files, target is tested, not in a risky cycle |
-| **Medium** | Blast radius 5-15 files, OR target is untested |
-| **High** | Blast radius > 15 files, OR target is untested AND in a cycle |
-| **Critical** | Blast radius > 30 files, OR target is in a high-risk cycle (>50% of codebase risk surface) |
+| **Low** | Blast radius under 5 files, target tested, not in a risky cycle |
+| **Medium** | Blast radius 5-15 files, or target untested |
+| **High** | Blast radius over 15 files, or target untested and in a cycle |
+| **Critical** | Blast radius over 30 files, or target in a high-risk cycle (over 50% of codebase risk surface) |
 
-When multiple criteria apply, use the highest verdict. When tools are missing, caveat
-the verdict: "Medium (test coverage unknown — analyze_test_gaps not available)".
+Take the highest verdict that applies. When a tool was skipped, qualify the
+verdict: "Medium (test coverage unknown: analyze_test_gaps unavailable)".
 
-## Summary Format
-
-Return this to the calling agent:
+## Summary format
 
 ```
 ## Change Impact: <target>
@@ -78,11 +60,11 @@ Return this to the calling agent:
 - Test coverage: tested / untested / unknown (tool unavailable)
 - Cycle risk: none / low / high (N% of codebase affected) / unknown (tool unavailable)
 
-**Caution areas:** <list of highest-risk direct dependents, or "none identified">
-**Suggested:** <e.g., "run tests in X before merging", "review Y for breakage", "run architecture-audit to understand full impact">
+**Caution areas:** <highest-risk direct dependents, or "none identified">
+**Suggested:** <e.g. "run tests in X before merging", "review Y for breakage", "run architecture-audit for the full picture">
 ```
 
-## Project Map Updates
+## Project map
 
-None. Change Impact reads `project-map.md` (workspace root) for context (chokepoints, known
-risky files) but does not modify it.
+Reads `project-map.md` (workspace root) for context such as chokepoints and known
+risky files. Never modifies it.

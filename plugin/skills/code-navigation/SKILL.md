@@ -1,48 +1,36 @@
 ---
 name: code-navigation
-description: >
-  Traverse large repositories efficiently using act's query tools. Use when
-  exploring unfamiliar code, mapping dependencies, understanding API surfaces,
-  analyzing side effects before modifying functions, or following call chains
-  across files. Avoids reading entire files by querying only the structure needed.
+description: Use when exploring unfamiliar code, mapping dependencies, reading an API surface, tracing call chains or data flow across files, or checking a function's side effects before changing it. Queries structure and bindings instead of reading whole files.
 ---
 
 # Code Navigation with act
 
-Use act's query tools to traverse large repositories efficiently.
-Do NOT read entire files when you can query for specific information.
+act's query tools answer questions about structure and bindings. Read and Grep answer
+questions about text. Pick by the shape of the question: "what does this file
+declare" or "who binds this symbol" is an act query; "where does this string
+appear" or "show me lines 40-80" is a Read or Grep.
 
-## Rules
+## Which tool answers which question
 
-1. **Start with repo-outline** — Before exploring a codebase, run `repo_outline` to understand the file tree, languages, and structure. Set `symbols: true` for files of interest.
+| Question | Tool | Notes |
+|---|---|---|
+| What is in this repo? | `repo_outline` | Always scope it (`depth`, `include`, `path`, or `max_files`); an unscoped outline of a medium repo stays in context for the whole session. Add `symbols: true` only for a narrowed path. |
+| What does this file declare? | `skeleton` | Signatures and declarations, no bodies. |
+| How do I call this? | `interface` | Signatures, types, and docstrings for one named symbol. |
+| What does this file import, and what imports it? | `graph` | `direction: "out"` for dependencies, `"in"` for dependents; `depth` bounds the walk. |
+| Where is this symbol defined? | `definition` | AST-based, no LSP needed. |
+| Where is this symbol used? | `references` | Resolves the binding, not the text. Requires LSP. |
+| What is defined across these files? | `symbols_batch` | Pass `kinds` or `pattern`; unfiltered output over several files is large. Pass `ids` to fetch specific implementations by stable ID. |
+| What does this function touch, and is it pure? | `effect_summary` | Reads, writes, raises, allocations, blocking calls, awaits, a purity verdict, and the unresolved-call frontier. |
+| Which external state does it read or write, exactly? | `mutations` | The raw access list behind `effect_summary`. |
+| How does control flow through it? | `control_flow` | Linearized branches and loops. |
+| Where does this value come from or go? | `data_flow` | Definition sites, use sites, def-to-use edges, and the locals that reach the return, within one function. |
 
-2. **Use skeleton for file structure** — When you need to understand a file's structure, use `skeleton` to see declarations without bodies. Never read an entire file just to find function names.
+## Working rules
 
-3. **Use interface for API surfaces** — When you need to understand how to use a class or module, use `interface` to get signatures, types, and docstrings without implementation details.
-
-4. **Follow the dependency graph** — Use `graph` to understand how files are connected. Start from the file you're interested in with `direction: "out"` (what it depends on) or `direction: "in"` (what depends on it).
-
-5. **Use mutations for raw side-effect detection** — Before modifying a function, use `mutations` to see the individual reads/writes of external state.
-
-6. **Use effect_summary for a categorized effect picture** — When you want the function's effects classified (reads, writes, raises, allocations, blocking calls, awaits) plus a purity verdict and an unresolved-call frontier, use `effect_summary`. It is the higher-level view over `mutations`: reach for `effect_summary` to answer "what does this touch, and is it pure?" before a change; drop to `mutations` for the raw access list.
-
-7. **Use control-flow for complex logic** — When a function is hard to understand, use `control_flow` to get a linearized view of its branching structure.
-
-8. **Use data_flow to trace values through a function** — The dual of `control_flow`: `data_flow` returns variable definition sites, use sites, def→use edges, and the locals that flow into the return. Reach for it to answer "where does this value come from / where does it go" within one function.
-
-9. **Batch symbol retrieval** — When you need symbols from multiple files, use `symbols_batch(files=[…])` instead of making separate `symbols` calls. When you need specific implementations, use `symbols_batch(ids=[…])` with stable IDs.
-
-10. **Use stable symbol IDs** — After finding a symbol, use its stable ID (format: `file::QualifiedName#kind`) for subsequent operations. This avoids ambiguity and eliminates the need to specify `file`.
-
-11. **Use definition for cross-file navigation** — When you find a reference to an unknown symbol, use `definition` to jump to its source.
-
-12. **Analyze before modifying** — Before making changes, run `effect_summary` (or `mutations`) on affected functions and `graph` on affected files to understand the blast radius.
-
-## Token-Saving Hints
-
-- `repo_outline` costs ~7 tokens/file (vs reading files: ~250 tokens/file)
-- `skeleton` costs ~15 tokens/declaration (vs reading full file)
-- `interface` costs ~25 tokens/member (vs reading implementation)
-- Always use compact mode (default) — ranges are strings, not objects
-- Use the `depth` param on `graph` and `repo_outline` to control output size
-- Filter `symbols_batch` with `kinds` to get only what you need
+- Use a symbol's stable ID (`file::QualifiedName#kind`) for follow-up calls once you
+  have it; it removes ambiguity and the need to repeat `file`.
+- Before modifying a function, run `effect_summary` on it and `graph` on its file so
+  the blast radius is known before the edit.
+- Follow the pairing hints in tool responses: `symbols` leads to `definition`, which
+  leads to `references`, which leads to `rename`.

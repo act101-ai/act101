@@ -1,130 +1,107 @@
 ---
 name: health-check
-description: >
-  Use when asked about code health, quality trends, what's getting worse, or for a
-  periodic quality check. Depth 1 — fast, trend-aware. Produces a health snapshot with
-  hotspots, cohesion issues, test gaps (evidence-labeled: lcov or convention), and trend
-  comparison if prior runs exist.
+description: Use when asked about code health, quality trends, what is getting worse, or for a periodic quality check. Produces a fast, trend-aware snapshot of hotspots, cohesion, duplication, test gaps, and security score.
 ---
 
 # Health Check
 
-**Depth:** Level 1 (Explore).
+**Depth:** Level 1 (Explore). Read `../analysis-protocol/references/protocol.md`
+first: it defines the run artifacts, the investigation loop, the summary format, and
+the project-map structure.
 
-See `../analysis-protocol/references/protocol.md` for: artifact directory structure,
-the investigation loop, depth levels, summary format, token budget rules, and project
-map structure. Read that document before proceeding.
+## Phase 1: Parallel tool dispatch
 
-## Phase 1: Parallel Tool Dispatch
+Dispatch every available tool in one parallel batch, one subagent per tool. Each
+saves raw JSON to `raw/<tool-name>.json` and returns a structured summary.
 
-Dispatch all available tools in a **single parallel batch**.
-Each subagent runs one tool, saves raw JSON to `raw/<tool-name>.json`, returns a
-structured summary.
+**Must-have:**
 
-**Must-have tools:**
-
-| Tool | Purpose | MCP call |
-|------|---------|----------|
+| Tool | Purpose | Call |
+|------|---------|------|
 | `analyze_hotspots` | Complexity ranking (H1) | `analyze_hotspots` |
-| `analyze_patterns` | Tier 1 structural smells | `analyze_patterns` (`tier: "fast"`) |
+| `analyze_patterns` | Tier 1 structural smells | `analyze_patterns` with `tier: "fast"` |
 
-If neither must-have tool is available, report that and stop.
+If neither is available, report that and stop.
 
-**Extended tools (use if available, skip and note in manifest if not):**
+**Extended** (use if available; note skips in the manifest):
 
-| Tool | Purpose | MCP call |
-|------|---------|----------|
+| Tool | Purpose | Call |
+|------|---------|------|
 | `analyze_coupling` | Instability overview | `analyze_coupling` |
 | `analyze_cohesion` | Module cohesion (H2) | `analyze_cohesion` |
-| `analyze_test_gaps` | Test coverage gaps; supply `coverage_report` for evidence-based statuses (evidence: lcov), else convention-based | `analyze_test_gaps` |
+| `analyze_test_gaps` | Test coverage gaps | `analyze_test_gaps`; pass `coverage_report` for evidence-based statuses (`evidence: lcov`), otherwise statuses are convention-based |
 | `analyze_inconsistencies` | Sibling pattern divergence (H5) | `analyze_inconsistencies` |
-| `scan` | AI-Code Health Score (security) + AI-config-backdoor / MCP-RCE findings | `scan` (pass `baseline` if `.act/baseline.json` is committed — see Trend Comparison). Scan auto-discovers lcov reports (coverage/lcov.info, lcov.info, target/coverage/lcov.info): when one is found, TestGap statuses are evidence-based and the `test_gaps` coverage record names the report (and flags it `stale` when older than the newest source). Repeat that record's `evidence:` clause in the report — never present convention-based statuses as coverage facts. |
-| `analyze_clones` | Duplication mass snapshot | If `scan` already ran in this workflow, source the Duplication row from its findings (cheaper — no re-run needed); otherwise call `analyze_clones` directly. Report `summary.duplicated_tokens` and `summary.clone_class_count` from the result. |
+| `scan` | AI-Code Health Score plus AI-config-backdoor and MCP-RCE findings | `scan`, with `baseline` when `.act/baseline.json` is committed (see Trend). Scan auto-discovers lcov reports (`coverage/lcov.info`, `lcov.info`, `target/coverage/lcov.info`); when one is found, test-gap statuses are evidence-based and the `test_gaps` coverage record names the report and flags it `stale` if older than the newest source. Repeat that record's `evidence` clause in the report. |
+| `analyze_clones` | Duplication mass | If `scan` already ran, take the Duplication row from its findings; otherwise call `analyze_clones` and report `summary.duplicated_tokens` and `summary.clone_class_count` |
 
-## Phase 2: Follow-up (Explore depth)
+## Phase 2: Follow-up
 
-From summaries, identify the top 3-5 findings and run one targeted follow-up each:
+From the summaries, pick the top 3-5 findings and run one targeted follow-up each:
+`skeleton` on each top hotspot to characterize it, and for untested high-coupling
+files a note of the compound risk. One round only; this is a health check, not an
+audit.
 
-- For each top hotspot: run `skeleton` to characterize what's wrong
-- For untested high-coupling files: note the compound risk (untested + high blast radius)
+## Trend
 
-Keep follow-ups to one round — this is a health check, not a full audit.
+**Score and class trend.** If `.act/scan-history.jsonl` exists, run
+`act trends --root <repo>` (`--format markdown` for the report artifact) rather than
+comparing scan scores by hand. It renders the score series, per-class count deltas,
+top movers, and an Improving / Stable / Degrading verdict with documented bands.
+Repos without a history file can adopt `act scan --history-append` in CI (full scans
+only; scoped runs are rejected). Count deltas are not identity tracking; the
+baseline below is the identity-level security trend.
 
-## Trend Comparison
+**Prior run deltas.** Look in `.act/runs/` (and the legacy `docs/act/`, read-only)
+for the most recent `manifest.json` with `"skill": "health-check"`. Load its
+`raw/hotspots.json` and `raw/coupling.json` and report: new hotspots (appeared or
+moved up), resolved hotspots (disappeared or moved down), coupling changes (lower
+instability is improving), and the test-coverage trend when `raw/test_gaps.json`
+exists in both runs (state whether each run's statuses were lcov-based or
+convention-based).
 
-**Score/class trend (scan history):** if `.act/scan-history.jsonl` exists in the
-repo, do not hand-compare scan scores across runs — run `act trends --root <repo>`
-(add `--format markdown` for the report artifact). It renders the score series,
-per-class count deltas, top movers, and an Improving/Stable/Degrading verdict with
-documented bands. Encourage repos without a history file to adopt
-`act scan --history-append` in CI (full scans only — scoped runs are rejected).
-Count deltas are not identity tracking; the baseline mechanism below remains the
-identity-level security trend.
+**Security trend.** With a committed `.act/baseline.json`, pass
+`baseline=".act/baseline.json"` on the Phase 1 `scan` call. The report's `baseline`
+section is the trend: `new` (regressions since the baseline), `fixed` (remediated
+debt), `baselined` (acknowledged debt still present). Without a baseline, record one
+with `baseline_write` (CLI `act scan --baseline-write`), commit it, and the next
+health check gets real deltas. Scores compare only across identical scan semantics;
+a diff-scoped scan (`base_ref`) is never comparable to a full-repo scan.
 
-Check `.act/runs/` (and the legacy `docs/act/`, read-only) for a prior Health Check run: look for a `manifest.json` with
-`"skill": "health-check"`. If found:
+**Duplication trend.** `summary.duplicated_tokens` is comparable across runs only
+when both used the same `min_tokens`; a cross-threshold comparison is not a trend.
 
-1. Load the most recent prior run's `raw/hotspots.json` and `raw/coupling.json`
-2. Report deltas:
-   - New hotspots since last run (files that appeared or moved up)
-   - Resolved hotspots (files that disappeared or moved down)
-   - Coupling changes (improving = lower instability, degrading = higher)
-   - Test coverage trend (if `raw/test_gaps.json` exists in both runs; note whether statuses are lcov evidence-based or convention-based via the `evidence` field)
+The verdict is **Improving** / **Stable** / **Degrading**. When `act trends` ran,
+adopt its verdict unless the artifact deltas contradict it, and say so if they do.
 
-**Security trend (scan):** do not hand-diff finding lists from a prior run's
-`raw/scan.json` — the baseline mechanism computes the deltas. If the repo has a
-committed `.act/baseline.json`, pass it on the Phase 1 call:
-`scan(root=<repo>, baseline=".act/baseline.json")`. The report's `baseline`
-section IS the security trend:
-
-- `new` — findings not in the baseline (regressions since it was written)
-- `fixed` — baseline entries no longer found (remediated debt)
-- `baselined` — acknowledged debt still present
-
-If no baseline exists yet, record one with `baseline_write`
-(CLI: `act scan --baseline-write`), commit it, and the next health check gets
-real deltas. Score comparability is what the tools report: scores compare only
-across identical scan semantics — a diff-scoped scan (`base_ref`) is never
-comparable to a full-repo scan.
-
-**Duplication trend:** `summary.duplicated_tokens` is the comparable scalar across runs — but only when both runs used the same `min_tokens` value. Cross-threshold comparisons (e.g. a 50-token run vs. a 100-token run) are invalid and must not be stated as a trend.
-
-Verdict must reflect the trend: **Improving** / **Stable** / **Degrading** —
-when `act trends` ran, adopt its verdict unless the artifact-diff evidence
-contradicts it (say so explicitly if it does).
-
-## Report Structure
+## Report structure
 
 ```markdown
 # Health Check: <project name>
 
 ## Health Summary
-Verdict: **Improving** / **Stable** / **Degrading**.
-One-paragraph assessment.
-If `scan` ran, lead with its **AI-Code Health Score** (security sub-score, 0–100)
-and list any `ai_config_backdoor` / `mcp_config_rce` findings as critical items.
+Verdict: **Improving** / **Stable** / **Degrading**, with a one-paragraph assessment.
+If `scan` ran, lead with its AI-Code Health Score (0-100) and list any
+`ai_config_backdoor` or `mcp_config_rce` findings as critical items.
 
 ## Duplication Snapshot
-`duplicated_tokens`: N — `clone_class_count`: N — `min_tokens`: N (sourced from scan Duplication findings or direct `analyze_clones` call).
+`duplicated_tokens`: N, `clone_class_count`: N, `min_tokens`: N (from scan or
+analyze_clones).
 
 ## Top Hotspots
-Ranked list with skeleton context from follow-up. Severity and recommended fix.
-Per-hotspot: file path, complexity score, what skeleton revealed, recommended action.
+Per hotspot: file path, complexity score, what skeleton revealed, recommended action.
 
 ## Cohesion Issues
-Low-cohesion modules with split recommendations.
-Per-issue: module, cohesion score, suggested split boundary.
+Per issue: module, cohesion score, suggested split boundary.
 
 ## Pattern Inconsistencies
-Sibling files that diverge from group conventions.
-Per-divergence: what's expected in the group, what's different in this file.
+Per divergence: the group convention, and how this file differs.
 
 ## Test Gaps
-Untested files ranked by risk (coupling × blast radius if available, else coupling alone).
-Per-gap: file path, risk factors, suggested test type.
+Untested files ranked by risk (coupling × blast radius if available, else coupling).
+Per gap: file path, risk factors, suggested test type. State the `evidence` basis.
 
 ## Trend
-(Present only if prior run data exists)
+(Only if prior run data exists.)
 | Metric | Previous | Current | Change |
 |--------|----------|---------|--------|
 | Top hotspot score | N | N | ↑/↓/= |
@@ -133,23 +110,13 @@ Per-gap: file path, risk factors, suggested test type.
 | Test gap count | N | N | ↑/↓/= |
 | Duplicated tokens (same min_tokens only) | N | N | ↑/↓/= |
 
-What improved, what degraded, what's new since last run.
-If `scan` ran with a baseline, lead the security line with the `baseline`
-counts: `new` = regressions, `fixed` = remediated debt, `baselined` =
-acknowledged debt still present.
+What improved, what degraded, what is new. If `scan` ran with a baseline, lead the
+security line with the `new` / `fixed` / `baselined` counts.
 
 ## Suggested Fixes
-Prioritized list of specific act MCP tool calls or skills to run.
+Prioritized act MCP tool calls or skills to run.
 ```
 
-## Worked Example: Duplication Snapshot
+## Project map updates
 
-For a full `analyze_clones` result read (same 2026-06-12 act-repo run), see the
-architecture-audit skill's "Worked Example: Clone-Mass Dispatch". The health-check
-reading is the summary row only — `duplicated_tokens`: 5,067,066 —
-`clone_class_count`: 8,156 — `min_tokens`: 50 — and the comparability rule from
-Trend Comparison: deltas are valid only between runs with the same `min_tokens`.
-
-## Project Map Updates
-
-Updates the **"Health Snapshot"** section only. Appends to the Analysis History table.
+Updates the **Health Snapshot** section only. Appends to the Analysis History table.

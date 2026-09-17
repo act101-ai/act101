@@ -1,75 +1,64 @@
 ---
 name: port-verify
-description: Gate a cross-language port for correctness — composes port-scoped behavioral equivalence, contract parity, and port-manifest drift into a port-correctness verdict. Use to verify that a ported function matches its source before marking the port done.
+description: Use to verify that a ported function matches its source before marking the port done. Composes port-scoped behavioral equivalence, cross-language contract parity, and port-manifest state into one port-correctness verdict.
 ---
 
 # port-verify
 
-A **port-correctness gate**: confirm a ported function behaves like its source
-and that the port manifest is not drifting. Composes two Enterprise verification
-ops with the port inventory.
+A **port-correctness gate**: confirm a ported function behaves like its source and
+that the port manifest agrees with reality. `verify_behavioral_equivalence` at
+`scope:"port"`, `verify_port_parity`, and the `port_*` tools are Enterprise tier and
+enforce it themselves.
 
-## Honesty caveat (read first)
+## Tools, in order
 
-By default this is a structural/contract comparison. `verify_port_parity` also
-offers opt-in differential execution (`execute: true`) — it generates inputs from
-the source signature and runs both functions under a resource-capped subprocess,
-diffing their JSON outputs; eligible only when both sides run under a supported
-interpreter (node, python3) with a JSON-able signature, falling back to structural
-comparison otherwise. Structurally, `verify_port_parity` and
-`verify_behavioral_equivalence` (scope=port)
-compare only dimensions BOTH grammars model — a dimension modeled by one side
-only is reported `unknown`, never falsely `preserved`/`diverged`. Each result
-carries `modeled_kinds`; an empty set for either grammar means that dimension is
-uncovered. Per-grammar degradation across the source/target language pair is the
-norm — name both languages and the uncovered dimensions. Verdicts are advisory.
-
-## Tier
-
-**Enterprise.** `verify_behavioral_equivalence` at `scope:"port"`,
-`verify_port_parity`, and the `port_*` manifest/inventory tools are all
-Enterprise and enforce the tier themselves.
-
-## Tools (in order)
-
-| Step | Tool | What it answers |
+| Step | Tool | Question it answers |
 |---|---|---|
-| 1 | `verify_behavioral_equivalence` (`scope:"port"`) | Do the source and ported functions have an equivalent control-flow shape under cross-language normalization? |
+| 1 | `verify_behavioral_equivalence` with `scope:"port"` | Do source and port have an equivalent control-flow shape under cross-language normalization? |
 | 2 | `verify_port_parity` | Do signature arity, return presence, effect-kind set, CFG shape, and raise count match across the language pair? |
-| 3 | `port_inventory` | Is the manifest consistent — is this symbol marked ported, and is the target verified? Surfaces drift. |
+| 3 | `port_inventory` | Is this symbol marked ported in the manifest, and does its target verify? |
 
 ## Workflow
 
-1. Call `verify_behavioral_equivalence` with `scope:"port"`, the source
-   `target`/`file` and the ported version via `before`/`after` (look up the
-   source→target mapping with `port_inventory` first). `equivalent` confirms shape
-   held; `changed` lists which dimensions diverged; `unknown` means a dimension
-   could not be normalized across the pair
-   — do not claim parity on it.
+1. Look up the source-to-target mapping with `port_inventory`. Then call
+   `verify_behavioral_equivalence` with `scope:"port"`, the source `target` and
+   `file`, and the ported version via `before`/`after`. `equivalent` means the shape
+   held; `changed` lists the diverging dimensions; `unknown` means a dimension could
+   not be normalized across the pair and carries no parity claim.
 2. Call `verify_port_parity` with `source_file`/`source_target` and
-   `ported_file`/`ported_target`. Read the verdict (`preserved`/`diverged`/
-   `unknown`), the `dimensions_checked`, and every `mismatch`. A `diverged`
-   dimension is a hard gate failure.
-3. Call `port_inventory` to check manifest state for the file: is it marked
-   ported, are ported/stubbed symbols recorded, does target verification pass?
-   A symbol that is structurally equivalent but absent/stubbed in the manifest
-   is **drift** — the manifest and reality disagree.
+   `ported_file`/`ported_target`. Read the verdict (`preserved`, `diverged`,
+   `unknown`), `dimensions_checked`, and every entry in `mismatches`. A `diverged`
+   dimension fails the gate.
+3. Read `port_inventory` for the file: is the symbol recorded as ported (not
+   stubbed), and does target verification pass? A structurally equivalent symbol
+   that the manifest records as absent, stubbed, or unverified is **drift**.
 
-## Verdict synthesis
+`verify_port_parity` also offers differential execution with `execute: true`: it
+generates inputs from the source signature, runs both functions under a
+resource-capped subprocess, and diffs their JSON output. It applies only when both
+sides run under a supported interpreter (node, python3) with a JSON-able signature,
+and falls back to the structural comparison otherwise.
 
-- **PORT VERIFIED** — `equivalent` (port scope) AND parity `preserved` with
-  ≥1 jointly-modeled dimension AND the manifest marks the symbol ported with a
-  verified target.
-- **PORT DIVERGED** — equivalence `changed` or parity `diverged` on any modeled
-  dimension; report the exact dimension and the mismatch.
-- **MANIFEST DRIFT** — structurally equivalent but the manifest disagrees
-  (unrecorded, stubbed, or unverified target).
-- **UNKNOWN** — either op returned `unknown`/empty `modeled_kinds` on a
-  dimension; name the source+target languages and the uncovered dimension.
-  Never present UNKNOWN as VERIFIED.
+## Verdict
+
+- **PORT VERIFIED**: `equivalent` at port scope, parity `preserved` (the tool grants
+  it only with at least two jointly modeled dimensions), and the manifest marks the
+  symbol ported with a verified target.
+- **PORT DIVERGED**: equivalence `changed` or parity `diverged` on any modeled
+  dimension. Report the dimension and the mismatch.
+- **MANIFEST DRIFT**: structurally equivalent but the manifest disagrees.
+- **UNKNOWN**: either op returned `unknown` or empty `modeled_kinds` on a dimension.
+  Name both languages and the dimension. UNKNOWN is never reported as VERIFIED.
+
+## Coverage
+
+Structural comparison covers only the dimensions both grammars model; a dimension
+modeled on one side only is reported `unknown`, never `preserved` or `diverged`.
+Each result carries `modeled_kinds`, and degradation across a language pair is
+normal. Quote `modeled_kinds` for both languages on any UNKNOWN. Verdicts
+are advisory.
 
 ## Output
 
 Per ported symbol: the equivalence result, the parity verdict with
-dimensions_checked + mismatches, the manifest status, and the gate verdict.
-Quote `modeled_kinds` for both languages on any UNKNOWN.
+`dimensions_checked` and `mismatches`, the manifest status, and the gate verdict.

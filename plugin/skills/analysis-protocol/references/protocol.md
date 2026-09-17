@@ -3,7 +3,7 @@
 Shared reference for the analysis-family skills — artifact directory structure, the
 investigation loop, depth levels, summary format, and token budget rules. Cited by
 architecture-audit, health-check, boundary-analysis, deepening-survey,
-migration-assessment, change-impact, and security-surface (create-work-loop also
+migration-assessment, change-impact, and security-surface (run-work-loop also
 cites the File-Location Convention below). This directory intentionally has no `SKILL.md`: the protocol is
 an include for the skills above, not an invocable skill.
 
@@ -230,7 +230,7 @@ remediation pass.
 
 ## Tool Availability
 
-Not all extended tools are implemented yet. Every skill handles this gracefully:
+Tool availability depends on the installed act version and the active tier. Every skill handles a missing tool the same way:
 
 - Discover availability with `status()` (tool list + tier state); treat an unavailable-tool call error as a skip
 - Unavailable tools: skip, note in `manifest.json` as `"skipped": ["tool-name"]`

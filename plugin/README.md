@@ -64,7 +64,7 @@ One entry per directory in `skills/`; each skill's own file carries its tier and
 - `code-generation` — Batch-generate boilerplate (constructors, accessors, builders, equality, serialization) from existing types
 - `code-navigation` — Traverse large repositories efficiently: explore unfamiliar code, map dependencies, understand API surfaces
 - `code-review` — Review code for bugs, complexity, unused symbols, and structural issues using AST-aware analysis
-- `create-work-loop` — Generate a resumable work-loop tracker that drives a large program through plan → implement → review cycles
+- `run-work-loop` — Create or resume the single resumable tracker that drives a large program through plan → implement → review cycles, with a hard cap on closed rows kept live
 - `dead-in-production` — Safely remove code: statically unreferenced ∩ never covered by tests ∩ never executed in production
 - `deepening-survey` — Survey for shallow modules (wide interface, little implementation) and rank the deepenings worth making, each gated by `simulate`
 - `health-check` — Trend-aware code-health snapshot: what's getting worse, periodic quality check
