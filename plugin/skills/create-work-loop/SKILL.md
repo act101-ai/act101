@@ -42,9 +42,10 @@ Every invocation, whatever the verb, starts by locating the tracker:
    `*-work-loop.md` at the repo root and under `docs/specs/`; one match is the
    tracker, several means ask which.
 2. **The tracker exists: resume it.** Read its snapshot and its own resume protocol,
-   then execute that protocol from its first step (integrity check, hygiene, sync
-   gate, first open row). The tracker's protocol is authoritative over this skill
-   wherever they differ; it was written for that program. Never re-create, re-seed,
+   then execute that protocol from its first step (display the file-group status,
+   integrity check, hygiene, sync gate, first open row). The tracker's protocol is
+   authoritative over this skill wherever they differ; it was written for that
+   program. Never re-create, re-seed,
    or reformat an existing tracker on a resume; reconcile only when the request is
    to update it (see Idempotency).
 3. **No tracker: create it** with the process below, commit it, and then resume it
@@ -60,7 +61,7 @@ ask only for what is missing, one question at a time.
 | Input | Source | Notes |
 |---|---|---|
 | Authority spec(s) | The approved spec docs this program implements | Required. Several are fine; the tracker lists the authority chain. |
-| Tracker path | User preference or project convention | Default `<program>-work-loop.md` at the repo root, a persistent ledger per the protocol's File-Location Convention (`../analysis-protocol/references/protocol.md`). Match any existing work-loop files. Its history ledger is `<program>-work-loop-history.md` beside it. |
+| Tracker path | User preference or project convention | Default `<program>-work-loop.md` at the repo root, a persistent ledger per the protocol's File-Location Convention (`../analysis-protocol/references/protocol.md`). Match any existing work-loop files. It is the ACTIVE file of the loop's file group; the backlog `<program>-work-loop-backlog.md` and the history `<program>-work-loop-history.md` sit beside it (see the file group below). |
 | Queue items | Spec sections or items, in execution order | One row per independently closeable unit. Reuse the spec's IDs (E1, R3, …) when it has them; otherwise mint a short prefix per phase. |
 | Ordering and dependencies | Spec dependency notes, user decisions | Record as a note under the queue, not as prose scattered through rows. |
 | Verification floor | Project test, lint, and build commands (CLAUDE.md, CI config, justfile) | Per surface when the program spans surfaces (cargo for crates, vitest for a worker, repo checks for an action). Record each gate's measured wall time beside it. |
@@ -89,13 +90,16 @@ it (the template says which). Keep every section; tailor the contents.
 Seed the queue completely: every item from the authority specs gets a row at
 creation, including far-future ones. A complete queue makes "find the first
 non-DONE row" a total resume algorithm; a gap forces the resuming session to
-re-derive scope from the specs.
+re-derive scope from the specs. Write every row into the tracker, then run the
+archive step once: it moves the rows beyond the open-row cap to the backlog, in
+reverse priority order, and writes the status block.
 
 ### 3. Commit
 
-Commit the tracker as its own change, or together with the state change it records,
-never apart from one. The tracker's credibility rests on one invariant: it is never
-stale relative to committed work. That starts at the first commit.
+Commit the tracker (with its backlog and history, when they exist) as its own
+change, or together with the state change it records, never apart from one. The
+tracker's credibility rests on one invariant: it is never stale relative to
+committed work. That starts at the first commit.
 
 ## Idempotency
 
@@ -108,8 +112,14 @@ safe. Reconcile instead of clobbering:
 3. Add rows for spec items that have none (amendments since creation), appended in
    spec order with a dated Log entry saying what was added and why.
 4. A row that no longer applies becomes `DROPPED(evidence)`; rows are never
-   deleted, only archived (see the cap below).
-5. Report drift you noticed but did not change (a row whose plan file is missing)
+   deleted, only moved: between the active tracker and its backlog, and from
+   either to the history (see the file group below). A move never renumbers or
+   edits a row.
+5. The archive step is idempotent: a second run moves nothing and changes no
+   byte, and `--dry-run` reports the moves and writes nothing. A tracker in a
+   shape older than the file group is migrated by that step's first run, never
+   by hand.
+6. Report drift you noticed but did not change (a row whose plan file is missing)
    rather than silently fixing it.
 
 ## What the generated protocol guarantees
@@ -138,17 +148,34 @@ adapted without breaking them:
   committed state.
 - **One item at a time.** An item fully closes before the next begins. Parallelism
   is a user decision recorded in the tracker's ordering notes.
-- **A hard cap on defunct rows, with a rolling archive.** An active tracker carries
-  at most **25 closed rows** (`DONE` / `DROPPED`) and no Log entry older than
-  **14 days**; everything beyond moves verbatim to `<program>-work-loop-history.md`
-  at every close and every sync, by a mechanical archive step, never a hand edit.
-  The tracker's integrity check **refuses** a tracker over either cap, so the cap
-  is met by tooling and a skipped archive shows up as a red check, not as a slowly
-  growing file. Archived rows stay allocated: IDs are never reused, cross-references
-  still resolve into the history ledger, and the integrity check counts archived IDs
-  in its uniqueness and contiguity checks. A re-opened finding gets a new row citing
-  the archived one; archived rows are never edited. Log rows are one line pointing
-  at commits and the row; detail lives in the row, the plan, or the commit.
+- **A file group: an active tracker with hard caps, a backlog, and a history
+  (operator direction 2026-09-21; the closed-row cap and rolling archive,
+  operator order 2026-09-16).** Each loop is three files. The **active** tracker
+  (`<program>-work-loop.md`) is the only file a resume reads in full: the snapshot,
+  the resume protocol, the priority order, the Log, and at most **25 open rows**,
+  **25 closed rows** (`DONE` / `DROPPED`), and **14 days** of Log. The **backlog**
+  (`<program>-work-loop-backlog.md`) holds only open rows that wait for a slot. The
+  **history** (`<program>-work-loop-history.md`) holds closed rows and old Log
+  entries, verbatim and append-only. At every close and every sync a mechanical
+  archive step, never a hand edit: moves closed rows beyond the cap from the active
+  tracker to the history, then makes the active tracker's open rows the next 25
+  rows of the whole group's work order: the operator's queue-head override (the
+  snapshot's **Next row** line) first, then the priority order. Lower-ranked
+  waiting rows move to the backlog and higher-ranked ones move in; a started row
+  never leaves the active tracker and counts against the 25. The
+  step regenerates a machine-maintained **status** in the snapshot: open and closed
+  rows in the active tracker, rows in the backlog, archived rows in the history
+  (DONE and DROPPED separately), and the id union. **Displaying that status is the
+  first step of every resume.** The integrity check **refuses** an active tracker
+  over any cap, so the caps are met by tooling and a skipped archive step shows up
+  as a red check. Rows move verbatim and IDs are never reused or renumbered;
+  cross-references still resolve into whichever file holds the row, and the
+  integrity check proves every ID unique and the union contiguous across all three
+  files. A re-opened finding gets a new row citing the archived one; archived rows
+  are never edited. New non-blocking findings are appended to the backlog; the next
+  archive step pulls them in when a slot opens, in priority order. Log rows are one
+  line pointing at commits and the row; detail lives in the row, the plan, or the
+  commit.
 - **Machine hygiene is part of the floor.** The hygiene check runs before every
   gate and at every close; on failure the loop prunes and re-checks. A gate that
   stalls is diagnosed and killed, never waited out.
@@ -202,8 +229,8 @@ If the project has its own execution skills, use them. Otherwise:
   diff against its task text before dispatching the next; run one whole-item
   review before closing the row.
 - **Review before closing**: findings are fixed in-item or captured as F-rows.
-- **Archive before closing**: run the archive step, then commit the close and the
-  moves together.
+- **Archive before closing**: run the archive step (archive, then refill), then
+  commit the close and the moves together.
 
 ## Variant: the quality loop (the architecture ratchet)
 
@@ -285,8 +312,8 @@ audit-derived rows.
 - The trend is monotonic by construction: a degrade becomes a finding and the loop
   pulls it back.
 - Same-commit state updates still hold for the tracker's cycle and phase row.
-- The closed-row cap and rolling archive apply to the quality-loop tracker too;
-  the history ledger keeps every closed cycle's rows.
+- The file group (caps, archive, refill, status) applies to the quality-loop
+  tracker too; the history keeps every closed cycle's rows.
 
 ### Named exclusions for the generated tracker
 
