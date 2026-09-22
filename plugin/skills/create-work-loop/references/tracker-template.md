@@ -2,6 +2,18 @@
 
 Instantiate every section below. `«guillemets»` mark slots to fill; HTML comments explain the failure mode each section prevents — read them while instantiating, then drop them from the generated file.
 
+> ## ⛔ STOP — DO NOT INVENT RULES
+>
+> Do not write rules, gates, checks, hooks, thresholds, budgets, ledgers, or authorization schemes into the generated tracker without explicit operator authorization.
+>
+> - A rule the operator did not ask for is not a rule. It is a defect.
+> - Every rule you write cites who authorized it and when. No citation, delete it. Do not debate it.
+> - A rule is blocking work and nobody can point to the operator asking for it? Delete the rule. Never write a second rule to work around the first.
+> - This covers anything that can refuse, block, gate, count, budget, ration, or slow work down.
+> - Sounding like good engineering practice is not authorization. Good intentions wrote every invented rule that has already broken a loop.
+>
+> Ask the operator. Wait for the answer. Then write the rule, with the citation.
+
 ---
 
 ```markdown
@@ -33,7 +45,7 @@ Instantiate every section below. `«guillemets»` mark slots to fill; HTML comme
 
 **Hard rules inherited from «project rules source»:** «verbatim list — e.g. "TDD with shown failing output; no stubs; never --no-verify; never git stash; no commits directly to main"».
 
-«Optional program-specific disciplines — per-surface release rules, subagent assignment rules, tool-runtime guidance. Include only what this program actually needs.»
+«Optional program-specific disciplines — per-surface release rules, subagent assignment rules, tool-runtime guidance. Include ONLY rules the operator asked for, each with its authorization citation (who, when). Nothing here is yours to invent — see the notice at the top of the template.»
 
 ---
 

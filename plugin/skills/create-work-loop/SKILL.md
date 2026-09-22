@@ -1,9 +1,21 @@
 ---
-name: run-work-loop
-description: Use to run, create, resume, or continue a work loop, in any phrasing ("run the work loop", "resume the tracker", "continue the remediation loop", "create a work loop for this spec", "make this resumable", "work through this spec item by item") and the quality loop ("run the quality loop", "continuous quality", "quality ratchet", "architecture ratchet", "keep auditing and refactoring"). Given a tracker, it resumes that tracker; otherwise it creates the requested one and starts it.
+name: create-work-loop
+description: Use to create, run, resume, or continue a work loop, in any phrasing ("create a work loop for this spec", "set up a tracker", "make this resumable", "work through this spec item by item", "run the work loop", "resume the tracker", "continue the remediation loop") and the quality loop ("run the quality loop", "continuous quality", "quality ratchet", "architecture ratchet", "keep auditing and refactoring"). Given a tracker, it resumes that tracker; otherwise it creates the requested one and starts it.
 ---
 
-# Run Work Loop
+# Create Work Loop
+
+> ## ⛔ STOP — DO NOT INVENT RULES
+>
+> Do not add rules, gates, checks, hooks, thresholds, budgets, ledgers, or authorization schemes to a tracker without explicit operator authorization.
+>
+> - A rule the operator did not ask for is not a rule. It is a defect.
+> - Every rule in a tracker cites who authorized it and when. No citation, delete it. Do not debate it.
+> - A rule is blocking work and nobody can point to the operator asking for it? Delete the rule. Never write a second rule to work around the first.
+> - This covers anything that can refuse, block, gate, count, budget, ration, or slow work down.
+> - Sounding like good engineering practice is not authorization. Good intentions wrote every invented rule that has already broken a loop.
+>
+> Ask the operator. Wait for the answer. Then write the rule, with the citation.
 
 A work loop is one markdown file that is the **entire resumable state** of an
 implementation program. Any session, tomorrow, after a crash, or a different agent,
@@ -140,9 +152,14 @@ adapted without breaking them:
 - **Machine hygiene is part of the floor.** The hygiene check runs before every
   gate and at every close; on failure the loop prunes and re-checks. A gate that
   stalls is diagnosed and killed, never waited out.
-- **Gates are inputs, never outputs.** The loop never adds a hook stage, a coverage
-  pass, or a CI job, and never lengthens a gate; the cost of every gate is the
-  operator's decision, cited in the tracker when it changes.
+- **Gates and rules are inputs, never outputs.** The loop never adds a hook stage, a
+  coverage pass, a CI job, a rule, or a scheme that rations anything, and never
+  lengthens a gate; the cost of every gate and the existence of every rule is the
+  operator's decision, cited in the tracker. A rule with no citation is deleted on
+  sight — see the notice at the top of this skill. Two real failures came from
+  ignoring this: a self-added commit gate that replayed 462 corpus examples on every
+  commit and hung for an hour, and a self-invented "one authorization per run" scheme
+  that withheld eleven verified test maps from ever running.
 - **Operator-owned branch and PR flow**, as in the rules above.
 
 ## Planning an item (`TODO` → `PLANNED`)
