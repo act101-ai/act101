@@ -69,6 +69,9 @@ ask only for what is missing, one question at a time.
 | Project hard rules | The project's CLAUDE.md | Inherit verbatim: no rules the project lacks, none of its rules dropped. |
 | Exclusions | Anything from a sibling work loop that does not apply here | Name them ("scan-score tracking excluded: specific to the remediation loop"). A named exclusion is a decision; a silent omission looks like an oversight. |
 | Workspace rules | Branch, worktree, concurrency, and push-cadence facts | E.g. "a concurrent agent shares this checkout; wait out lock contention." Push cadence is an operator decision: a branch that is never pushed meets CI only at reconciliation, and local hooks are not CI. |
+| Mechanism vocabulary | `findings-inbox/MECHANISMS.md` beside the tracker (operator decision 2026-09-22) | For a findings loop: the keys that name defect *mechanisms* (never languages or carriers), each with a tier (A/B/C/`-`) and a one-line definition. Seed it from the findings at hand; a new key is added in the same commit as the first row that uses it. |
+| Id block per producer | Operator decision | Every loop that files findings allocates from its own block (this repo: validation F-2500..F-2999, remediation F-3000+). Two loops never share a counter; the union is never required to be contiguous. |
+| Peer loops | The other loops that produce or consume this loop's findings | Named so the inbox files and the SendMessage events have owners. Peers never merge each other's branches. |
 
 **Branch and PR rules** (defaults; an operator instruction always wins):
 
@@ -139,15 +142,59 @@ adapted without breaking them:
 - **Found-issue discipline.** Any defect discovered mid-item is in scope: nothing
   is "pre-existing", nothing is parked in a follow-ups list. A blocking issue is
   fixed inside the item; a non-blocking one gets a dated spec amendment plus an
-  `F-n` queue row with the same closing discipline as planned rows.
+  `F-n` row — appended to the loop's own inbox file in a mechanism-keyed loop,
+  to the backlog otherwise — with the same closing discipline as planned rows.
 - **Evidence-gated closing.** A row reaches `DONE` only when every acceptance
   criterion in its spec section passes with shown output from the verification
   floor. "It should pass" closes nothing.
 - **Same-commit state updates.** The queue row changes in the same commit as the
   work it records, so any interruption leaves the tracker describing the last
   committed state.
-- **One item at a time.** An item fully closes before the next begins. Parallelism
-  is a user decision recorded in the tracker's ordering notes.
+- **One item at a time.** An item fully closes before the next begins. A mechanism
+  head or a language batch is one item. Parallelism is a user decision recorded in
+  the tracker's ordering notes; it never means extra worktrees without the
+  operator's word.
+- **Findings are mechanism-keyed (operator decision 2026-09-22).** A findings
+  tracker declares `<!-- work-loop: mechanism-keyed, caps -->`. Every open row's
+  Item opens with a tag — `**<key>** · <kind> · <Severity> · <language> · w<N> —
+  <one sentence> · [evidence](findings/<id>.md)` — whose key names the mechanism
+  behind the defect, from `findings-inbox/MECHANISMS.md` or `unique`. The archive
+  step creates one **mechanism head** (`M-n`) per key with two or more open
+  members, ranks heads by their members' severity weight over the tier's cost,
+  refills the active tracker from that computed order (no priority table), and
+  closes every member when its head closes. The unit of work is the mechanism, so
+  one fix retires every instance in every language; intake of a known mechanism in
+  a new language adds width, not work. Keys with tier `-` and `unique` rows queue
+  as language batches.
+- **Findings arrive through an inbox, never by editing another loop's ledger.** A
+  producer appends rows to its own file under `findings-inbox/` (`| ID | Mechanism
+  | Kind | Severity | Width | Item | Refs |`), ids from its own block; the consumer's
+  archive step ingests them. The file name is the producer (`V-<n>.md` for a
+  tranche, `validation.md` or `remediation.md` for a loop's untranched work) and is
+  what binds a new id to its block; the checker refuses any other name. Inbox files
+  are append-only, so two branches never conflict on them. A row's evidence (repro, payloads, measurements) lives in
+  `findings/<id>.md`, one file per row, written by the archive step from the inbox
+  row when none exists.
+- **Loops sync with `main`, never with each other (operator decision 2026-09-22).**
+  Each loop merges `origin/main` at row start and before opening a PR; a tracker
+  conflict is resolved by keeping the branch's own row lines and re-running the
+  archive step. Cross-loop events go by one SendMessage to the orchestrator,
+  fire-and-forget: "inbox appended for <row>", "PR #n merged touching <paths>",
+  "mechanism key added: <key>". No per-activity peer merge, no sync Log entries, no
+  id announcements.
+- **Ceremony follows blast radius (operator decision 2026-09-22).** Tier A (core or
+  shared code, any Critical data loss): full subagent-driven development with a
+  whole-branch review. Tier B (per-language handler files): one implementer per
+  language batch, one reviewer, at most two fix rounds. Tier C (docs, corpus
+  re-bless, harness, process): the controller executes inline. A `process` row
+  closes by deleting the rule it names.
+- **Convergence cap.** Three fix rounds on a row or task, then `BLOCKED(diagnosis)`
+  and a re-plan (split, re-scope, change approach) before any further round. A row
+  that took forty-one rounds is the incident this rule answers.
+- **Caps the checker enforces.** An open row is at most 600 characters and a Log
+  entry at most 300; the resume protocol is one screen and cites
+  `work-loop-lessons.md` for amendments a plan reads by touched path. A tracker
+  nobody can afford to read is not resumable.
 - **A file group: an active tracker with hard caps, a backlog, and a history
   (operator direction 2026-09-21; the closed-row cap and rolling archive,
   operator order 2026-09-16).** Each loop is three files. The **active** tracker
@@ -160,7 +207,8 @@ adapted without breaking them:
   archive step, never a hand edit: moves closed rows beyond the cap from the active
   tracker to the history, then makes the active tracker's open rows the next 25
   rows of the whole group's work order: the operator's queue-head override (the
-  snapshot's **Next row** line) first, then the priority order. Lower-ranked
+  snapshot's **Next row** line) first, then the priority order (computed from the
+  tags in a mechanism-keyed loop, the phase table otherwise). Lower-ranked
   waiting rows move to the backlog and higher-ranked ones move in; a started row
   never leaves the active tracker and counts against the 25. The
   step regenerates a machine-maintained **status** in the snapshot: open and closed
@@ -222,6 +270,10 @@ If the project has its own execution skills, use them. Otherwise:
   failing verification, or a plan that contradicts live code sets `BLOCKED(reason)`
   on the row, records what is needed, and surfaces it. Pushing through a broken
   premise creates work that must be undone.
+- **Ceremony by tier** (see the guarantees above): tier A rows run the full
+  subagent-driven cycle; tier B rows batch every open instance of one language into
+  one plan with one implementer and one reviewer; tier C rows are executed inline.
+  Three fix rounds without convergence block the row for a re-plan.
 - **Subagent execution** (when the session runs subagents): one fresh subagent per
   task, dispatched sequentially, never in parallel on one checkout. Each dispatch
   carries the task's full text, the interfaces it touches, the global constraints,
