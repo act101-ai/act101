@@ -67,6 +67,9 @@ One entry per directory in `skills/`; each skill's own file carries its tier and
 - `create-work-loop` — Create or resume the single resumable tracker that drives a large program through plan → implement → review cycles, with a hard cap on closed rows kept live
 - `dead-in-production` — Safely remove code: statically unreferenced ∩ never covered by tests ∩ never executed in production
 - `deepening-survey` — Survey for shallow modules (wide interface, little implementation) and rank the deepenings worth making, each gated by `simulate`
+- `define-work` — Turn a request into an approved design before any code is written: repo recon, one question at a time, a builder read of the design, and an approval gate
+- `deliver-work` — Take finished work to a reviewed, CI-green pull request: every CI check run locally, an adversarial branch review, the PR with its evidence, CI watched to green; merges and discards only on the operator's request
+- `diagnose-defect` — Find a defect's root cause and fix it test-first: a deterministic reproduction, the code path read end to end, ranked hypotheses, a bisect for regressions, a fix at the cause, and the same mechanism found elsewhere
 - `health-check` — Trend-aware code-health snapshot: what's getting worse, periodic quality check
 - `hot-path-refactor` — Rank refactor targets by runtime profile hotness × static complexity and coupling
 - `migration-assessment` — Assess migration/port readiness: what makes this codebase hard to rewrite
