@@ -247,7 +247,7 @@ help text. Run `act docs` for the full generated reference, or browse
 
 | Command | What it does |
 |---------|--------------|
-| `act query` | Read code structure, references, diagnostics, types (19 query types) |
+| `act query` | Read code structure, references, diagnostics, types (25 query types) |
 | `act inspect` | Discover available actions at a location |
 | `act refactor` | Semantic code transformations (182 operations; e.g. `act refactor extract-variable`) |
 | `act insert` | Add new code at AST-aware locations (`act insert body`) |
