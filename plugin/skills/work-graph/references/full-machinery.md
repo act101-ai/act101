@@ -1,13 +1,12 @@
 # Full machinery
 
 These rules add to the core for a graph that keeps its rows in `graph.md`.
-With another ledger none of this applies. Section numbers (§n) refer to the
-skill's `SKILL.md`.
+With another ledger none of this applies.
 
 - **Open rows and backlog.** `graph.md` holds at most 25 open rows.
   `backlog.md` holds the open rows that wait for a slot; a closed row in it is
   a defect, because closed rows go to `history.md`.
-- **Refill.** After it trims (§9), archiving makes the open rows of
+- **Refill.** After it trims the closed rows, archiving makes the open rows of
   `graph.md` the `IN-PROGRESS` rows plus the top of the work order, ready
   rows first. The work order is: the **Next** ids, then mechanism heads by
   score, then the other rows in file order. Only rows with a contract move
@@ -32,7 +31,8 @@ skill's `SKILL.md`.
     new key in the same commit as the first row that uses it.
   - Archiving ingests new inbox rows into `backlog.md` and writes
     `findings/<id>.md`. A finding row waits there with Model `—` until the
-    controller writes its contract and sets its Model (§7.1 step 5).
+    controller writes its contract and sets its Model, at resume, when the
+    stuck nodes are decided.
   - Archiving creates one mechanism head `M-n` per key with two or more open
     members (tiers `A`–`C`; not `-`, not `unique`). The head is one node; the
     controller writes its contract, whose Files and Acceptance cover every

@@ -2,9 +2,9 @@
 
 Copy the block below to `docs/work/<program>/graph.md` and fill every `<slot>`.
 Delete an optional header line you do not use. The result must be a valid
-graph (§3.7 of the skill). A `<citation>` is who approved the rule and when,
+graph (§7 of `graph-format.md`). A `<citation>` is who approved the rule and when,
 or the project instruction file or operator-approved spec it comes from (the
-notice in `SKILL.md`).
+rules notice at the head of the skills that create and run a graph).
 
 ```markdown
 # <Program> Work Graph
@@ -54,7 +54,7 @@ followed by `(<citation>)` at the end of the line; `worktrees` needs none.
 A `<producer>` is a lowercase letter, then lowercase letters, digits, `_` or
 `-`. The **Findings:** `<citation>` does not contain the letters `blocks`.
 
-With another ledger (§3.6 of the skill), replace the node table with one
+With another ledger (§6 of `graph-format.md`), replace the node table with one
 line: `Nodes live in <ledger>. Mapping: ledger.md.`
 
 Archiving creates `history.md` and `backlog.md` when it first needs them.

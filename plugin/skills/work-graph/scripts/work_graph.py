@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Check, schedule, report and archive a work graph.
 
-Bundled with the create-work-loop skill. Standard library only.
+Bundled with the work-graph companion of the plan-work and execute-work
+skills. Standard library only.
 
     work_graph.py check   <graph.md>   refuse a malformed graph; exit 1 with one line per defect
     work_graph.py ready   <graph.md>   the nodes to run now
