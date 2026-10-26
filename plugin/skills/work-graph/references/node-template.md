@@ -2,7 +2,7 @@
 
 Copy the block below to `docs/work/<program>/nodes/<id>.md` at creation. Fill
 the contract; write `—` for Files, Consumes or Produces when there is nothing
-to list. The plan is written when the node starts (§5 of the skill).
+to list. The plan is written when the node starts.
 
 ```markdown
 # <id> — <what the node delivers>

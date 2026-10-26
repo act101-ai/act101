@@ -25,9 +25,9 @@ ledger does it:
 | Model | Record `haiku`, `sonnet` or `opus`. |
 | Refs | Add commits and acceptance results to a node. |
 | Export | List every node with its id, its dependencies, its state in this skill's states, and its model. |
-| Lifecycle | For each state change, what an adopted ticket workflow requires (§2 of the skill). |
+| Lifecycle | For each state change, what an adopted ticket workflow requires (the workflows the graph header records). |
 
-The ready set and the schedule (§3.5 of the skill) are computed from the
+The ready set and the schedule (§5 of `graph-format.md`) are computed from the
 export, with `parallel` and the Files-overlap rule applied; the ledger's own
 view of unblocked work does not know either.
 
