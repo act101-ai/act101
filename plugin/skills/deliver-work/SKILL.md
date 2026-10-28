@@ -72,6 +72,10 @@ request.
    - Verify each finding: read the cited code and reproduce it, for code
      with a failing test. Mark it confirmed or refuted, with the evidence.
    - Fix each confirmed finding test-first, then run step 2's checks again.
+   - A requirement the delivered code does not meet is fixed in the code;
+     when the operator accepts the delivered behavior instead, write a dated
+     amendment to the requirement document so that it describes what
+     shipped, marked as the operator's call.
    - Keep each refuted finding with its evidence for the report.
    - The stage passes when no confirmed finding is open.
 
@@ -155,7 +159,8 @@ request.
 - branch, base, and PR link;
 - every commit hash on the branch since its base;
 - each check and its result, and the CI state;
-- the review: fixed findings, and refuted findings with their evidence;
+- the review: fixed findings, refuted findings with their evidence, and the
+  requirement amendments written;
 - every open item, every step skipped at the operator's request, and every
   check that did not run, marked not run with its reason.
 
