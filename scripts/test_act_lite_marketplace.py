@@ -3,6 +3,7 @@
 import json
 import os
 from pathlib import Path
+import re
 import shutil
 import subprocess
 import tempfile
@@ -62,14 +63,32 @@ def marketplace_install_smoke() -> None:
 
         config = scratch / "config/opencode"
         config.mkdir()
-        shutil.copytree(PLUGIN / "skills", config / "skills")
+        existing_skill = scratch / "home/.config/opencode/skills/execute-work/SKILL.md"
+        existing_skill.parent.mkdir(parents=True)
+        existing_contents = "---\nname: execute-work\ndescription: Existing act101 skill fixture\n---\nact101 sentinel\n"
+        existing_skill.write_text(existing_contents)
         (config / "opencode.json").write_text(json.dumps({
+            "mcp": {"act101": {"type": "local", "command": ["act", "mcp", "serve"], "enabled": False}}
+        }))
+        act_lite_config = scratch / "home/.config/opencode/act-lite"
+        act_lite_config.mkdir(parents=True)
+        act_lite_skills = act_lite_config / "skills"
+        shutil.copytree(PLUGIN / "skills", act_lite_skills)
+        (act_lite_config / "opencode.json").write_text(json.dumps({
             "mcp": {"act-lite": {"type": "local", "command": ["act-lite", "mcp", "serve"], "enabled": True}}
         }))
+        env["OPENCODE_CONFIG_DIR"] = str(act_lite_config)
+        resolved = json.loads(run("opencode", "debug", "config", "--pure", env=env))
+        assert set(resolved["mcp"]) == {"act101", "act-lite"}, resolved["mcp"]
+        discovered = run("opencode", "debug", "skill", "--pure", "--print-logs", env=env)
+        # OpenCode caps debug JSON output; its log reports the full discovery count.
+        discovered_count = int(re.findall(r"init count=(\d+)", discovered)[-1])
+        assert discovered_count == 1 + sum(p.is_dir() for p in (PLUGIN / "skills").iterdir()), discovered_count
         result = run("opencode", "mcp", "list", "--pure", env=env)
         assert "act-lite" in result, result
         assert "connected" in result and "failed" not in result, result
-        assert (config / "skills/execute-work/SKILL.md").is_file()
+        assert existing_skill.read_text() == existing_contents
+        assert (act_lite_skills / "execute-work/SKILL.md").is_file()
 
 
 if __name__ == "__main__":
