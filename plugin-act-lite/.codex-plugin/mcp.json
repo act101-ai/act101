@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "act-lite": {
+      "command": "act-lite",
+      "args": ["mcp", "serve"]
+    }
+  }
+}

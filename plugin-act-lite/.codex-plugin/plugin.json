@@ -1,0 +1,13 @@
+{
+  "name": "act-lite",
+  "version": "1.2.2",
+  "description": "AST-aware code queries, code-health and dependency analysis for AI agents across 43 languages.",
+  "skills": "./skills/",
+  "mcpServers": "./.codex-plugin/mcp.json",
+  "author": {
+    "name": "Kage Martin",
+    "url": "https://github.com/act101-ai"
+  },
+  "repository": "https://github.com/act101-ai/act-lite",
+  "license": "MIT"
+}
