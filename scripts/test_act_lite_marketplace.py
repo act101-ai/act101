@@ -63,10 +63,13 @@ def marketplace_install_smoke() -> None:
 
         config = scratch / "config/opencode"
         config.mkdir()
-        existing_skill = scratch / "home/.config/opencode/skills/execute-work/SKILL.md"
+        existing_skill = config / "skills/execute-work/SKILL.md"
         existing_skill.parent.mkdir(parents=True)
         existing_contents = "---\nname: execute-work\ndescription: Existing act101 skill fixture\n---\nact101 sentinel\n"
         existing_skill.write_text(existing_contents)
+        before = run("opencode", "debug", "skill", "--pure", "--print-logs", env=env)
+        before_count = int(re.findall(r"init count=(\d+)", before)[-1])
+        assert before_count >= 2, before_count
         (config / "opencode.json").write_text(json.dumps({
             "mcp": {"act101": {"type": "local", "command": ["act", "mcp", "serve"], "enabled": False}}
         }))
@@ -83,7 +86,7 @@ def marketplace_install_smoke() -> None:
         discovered = run("opencode", "debug", "skill", "--pure", "--print-logs", env=env)
         # OpenCode caps debug JSON output; its log reports the full discovery count.
         discovered_count = int(re.findall(r"init count=(\d+)", discovered)[-1])
-        assert discovered_count == 1 + sum(p.is_dir() for p in (PLUGIN / "skills").iterdir()), discovered_count
+        assert discovered_count == before_count + sum(p.is_dir() for p in (PLUGIN / "skills").iterdir()) - 1, discovered_count
         result = run("opencode", "mcp", "list", "--pure", env=env)
         assert "act-lite" in result, result
         assert "connected" in result and "failed" not in result, result
