@@ -18,6 +18,18 @@
       "source": "./plugin",
       "category": "development",
       "homepage": "https://act101.ai"
+    },
+    {
+      "name": "act-lite",
+      "description": "AST-aware code queries, code-health and dependency analysis for AI agents across 43 languages.",
+      "version": "1.2.2",
+      "author": {
+        "name": "Kage Martin",
+        "url": "https://github.com/act101-ai"
+      },
+      "source": "./plugin-act-lite",
+      "category": "development",
+      "homepage": "https://github.com/act101-ai/act-lite"
     }
   ]
 }
