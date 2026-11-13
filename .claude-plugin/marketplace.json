@@ -10,7 +10,7 @@
     {
       "name": "act101",
       "description": "AST-aware code transformer for AI agents. 140+ refactoring operations across 100+ languages with undo/redo, preview mode, and intelligent guardrails.",
-      "version": "2.8.3",
+      "version": "2.9.0",
       "author": {
         "name": "Kage Martin",
         "url": "https://github.com/act101-ai"
@@ -18,18 +18,6 @@
       "source": "./plugin",
       "category": "development",
       "homepage": "https://act101.ai"
-    },
-    {
-      "name": "act-lite",
-      "description": "AST-aware code queries, code-health and dependency analysis for AI agents across 43 languages.",
-      "version": "1.2.2",
-      "author": {
-        "name": "Kage Martin",
-        "url": "https://github.com/act101-ai"
-      },
-      "source": "./plugin-act-lite",
-      "category": "development",
-      "homepage": "https://github.com/act101-ai/act-lite"
     }
   ]
 }
