@@ -87,6 +87,32 @@ API; `callers` on key functions for coupling.
    1
    ```
 
+8. **Structural health of the change** — `analyze_patterns`,
+   `analyze_clones`, `analyze_cycles` (Architecture tier; CLI `act analyze
+   patterns|clones|cycles`). Compute the changed lines first:
+   `git diff -U0 --diff-filter=AMR <base>`; each hunk header
+   `@@ -a,b +c,d @@` marks the new-side lines `c` to `c + d - 1` as changed,
+   and a deletion-only hunk (`d` = 0) marks line `c` at the deletion point.
+   Scope every call with `include` = the changed files' top-level
+   directories (`include` matches directories, not files; for a handful of
+   changed files, call `analyze_patterns` once per file with its `file`
+   param instead), and pass `tier: "fast"`: the default `all` also runs the
+   deep pass, which builds the workspace graph on every call regardless of
+   `file` and `include`.
+   - `analyze_patterns`: keep each finding whose `file` is a changed file
+     and whose `line` is a changed line, or whose `line` starts a function
+     that a changed line falls inside (function spans come from `skeleton`).
+     Report `pattern`, `severity`, `symbol`, `file:line` and
+     `thresholds_exceeded`. Findings on unchanged lines of changed files are
+     pre-existing context — report them as such or drop them.
+   - `analyze_clones`: keep a clone class with a member whose `file` is a
+     changed file and whose `start_line..end_line` overlaps a changed range.
+     Report `clone_type`, `token_count` and the member ranges.
+   - `analyze_cycles`: keep a cycle with a changed file in its `files`. The
+     kept set holds cycles the change takes part in, not only cycles it
+     creates — proving a cycle new needs the base analyzed in a second
+     checkout; do not claim newness.
+
 ## What to look for
 
 | Signal | Tool | Severity |
@@ -125,4 +151,17 @@ API; `callers` on key functions for coupling.
 
 ### Info (1)
 - `processAuth` called from 12 locations — high coupling [callers]
+
+### Structural health (2)
+- src/auth/login.ts:45 `handleLogin` god_function (statements: 65 >= 50) [analyze_patterns]
+- type-2 clone, 120 tokens: src/auth/login.ts:12-58 ~ src/auth/session.ts:8-54 [analyze_clones]
+
+### Limits
+Clones are subtree-shaped duplicates: type-1 (exact) and type-2 (renamed
+identifiers/literals); type-3 (gapped) clones are not detected, and a shared
+shape is not shared behavior. Pattern findings are threshold measurements
+(`thresholds_exceeded`), not proofs of a defect. Test files are excluded by
+convention — `summary.test_files_excluded` from `analyze_clones` says how
+many. State the `include` directories the calls were scoped to; a finding
+outside them was not looked for.
 ```

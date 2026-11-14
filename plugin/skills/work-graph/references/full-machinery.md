@@ -30,9 +30,9 @@ With another ledger none of this applies.
     the mechanism behind a defect, never the language it was found in. Add a
     new key in the same commit as the first row that uses it.
   - Archiving ingests new inbox rows into `backlog.md` and writes
-    `findings/<id>.md`. A finding row waits there with Model `—` until the
-    controller writes its contract and sets its Model, at resume, when the
-    stuck nodes are decided.
+    `findings/<id>.md`. A finding row waits there with Capability `—` until
+    the controller writes its contract and sets its Capability, at resume,
+    when the stuck nodes are decided.
   - Archiving creates one mechanism head `M-n` per key with two or more open
     members (tiers `A`–`C`; not `-`, not `unique`). The head is one node; the
     controller writes its contract, whose Files and Acceptance cover every

@@ -1,6 +1,6 @@
 ---
 name: diagnose-defect
-description: Finds the root cause of a defect and fixes it at the cause, proven by a test that failed first. Use when something is broken and its cause is not yet known, before proposing a fix: a bug, a failing or flaky test, a crash or error message, a regression ("this used to work"), a failure seen only in CI, or a performance regression.
+description: Finds the root cause of a defect and fixes it at the cause, proven by a test that failed first. Use when something is broken and its cause is not yet known, before proposing a fix, such as a bug, a failing or flaky test, a crash or error message, a regression ("this used to work"), a failure seen only in CI, or a performance regression.
 ---
 
 # Diagnose Defect

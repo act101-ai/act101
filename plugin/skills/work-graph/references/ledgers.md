@@ -22,9 +22,9 @@ ledger does it:
 | Create | Create a node with its id, title and a link to `nodes/<id>.md`. Use the id the ledger assigns as the node id and name the node file after it. |
 | Edge | Record that one node depends on another, as a dependency that blocks readiness. |
 | State | Set each of `TODO`, `PLANNED`, `IN-PROGRESS`, `DONE`, `BLOCKED(reason)`, `DROPPED(evidence)`. Where the ledger has no status for a state, record it with a label. |
-| Model | Record `haiku`, `sonnet` or `opus`. |
+| Capability | Record `lookup`, `mechanical`, `implementation` or `judgment`. |
 | Refs | Add commits and acceptance results to a node. |
-| Export | List every node with its id, its dependencies, its state in this skill's states, and its model. |
+| Export | List every node with its id, its dependencies, its state in this skill's states, and its capability (key `capability`; `graph-format.md` §3 states the older forms that still load). |
 | Lifecycle | For each state change, what an adopted ticket workflow requires (the workflows the graph header records). |
 
 The ready set and the schedule (§5 of `graph-format.md`) are computed from the

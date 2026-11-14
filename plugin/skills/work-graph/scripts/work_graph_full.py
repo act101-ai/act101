@@ -39,7 +39,8 @@ MEMBERS_CLOSED = "members closed"
 
 
 def model_optional(row) -> bool:
-    """A backlog row may carry Model `—` until the controller writes its contract."""
+    """A backlog row may carry Capability `—` until the controller writes its
+    contract. (Name kept for compatibility with existing extension modules.)"""
     return row.file == BACKLOG
 
 
@@ -48,9 +49,9 @@ def extra_rows(graph, core) -> list:
 
 
 def contract_rows(graph, core) -> list:
-    """Backlog rows that carry a Model must carry a contract (P1); a row with
-    Model `—` is a finding that waits for its contract."""
-    return [r for r in graph.extra if not r.closed and r.model in core.MODELS]
+    """Backlog rows that carry a Capability must carry a contract (P1); a row
+    with Capability `—` is a finding that waits for its contract."""
+    return [r for r in graph.extra if not r.closed and r.capability in core.CAPABILITIES]
 
 
 def marker_files(graph) -> list:
@@ -316,18 +317,18 @@ def close_members(graph, docs, core) -> list[str]:
 
 def has_contract(graph, row, core) -> bool:
     fields = core.contract(graph, row.id)
-    return row.model in core.MODELS and fields is not None and all(fields.get(f) for f in core.CONTRACT_FIELDS)
+    return row.capability in core.CAPABILITIES and fields is not None and all(fields.get(f) for f in core.CONTRACT_FIELDS)
 
 
 def rebalance(graph, docs, core) -> list[str]:
     """Closed backlog rows go to history; graph.md's open rows become the pinned
-    rows plus the top of the rank, ready rows first, contracted rows only."""
+    rows plus the top of the rank, ready rows first, contracted rows only.
+    Every moved line goes through core.remap_row_line, so a row leaving a
+    Tier or Model table takes its mapped capability value, and every insert
+    lands capability values in a Capability table — a legacy destination
+    table is migrated (see core.insert_table_lines)."""
     moves = []
     closed_backlog = [r for r in graph.extra if r.closed]
-    if closed_backlog:
-        history = docs.setdefault(core.HISTORY, core.history_skeleton(graph))
-        core.insert_table_lines(history, "Nodes", core.NODE_HEADER, [docs[BACKLOG][r.index] for r in closed_backlog])
-        moves += [f"{r.id} {r.state} backlog.md → history.md" for r in closed_backlog]
     done = {r.id for r in graph.all_rows() if r.state == "DONE"}
     by_id = {r.id: r for r in graph.rows + graph.extra if not r.closed}
     pinned = [r for r in graph.rows if r.state in PINNED]
@@ -337,15 +338,18 @@ def rebalance(graph, docs, core) -> list[str]:
     keep = {r.id for r in pinned} | {r.id for r in eligible[: max(0, OPEN_CAP - len(pinned))]}
     out_rows = [r for r in graph.rows if not r.closed and r.id not in keep]
     in_rows = [r for r in eligible if r.file == BACKLOG and r.id in keep]
-    if out_rows:
-        backlog = docs.setdefault(BACKLOG, backlog_skeleton(graph, core))
-        core.insert_table_lines(backlog, "Nodes", core.NODE_HEADER, [docs[core.GRAPH][r.index] for r in out_rows])
-        moves += [f"{r.id} graph.md → backlog.md" for r in out_rows]
-    if in_rows:
-        core.insert_table_lines(docs[core.GRAPH], "Nodes", core.NODE_HEADER, [docs[BACKLOG][r.index] for r in in_rows])
-        moves += [f"{r.id} backlog.md → graph.md" for r in in_rows]
-    # Delete moved lines from their source files by their original text, so the
-    # insertions above (which shift indices) cannot misdirect a deletion.
+    # Read the moved lines and delete them from their source files by their
+    # original text BEFORE any insert: inserting into a legacy table migrates
+    # that table, rewriting its rows' values, and when one file is both source
+    # and destination — backlog.md gives its closed and taken rows and receives
+    # the demoted ones — a post-insert deletion would match stale pre-migration
+    # text and leave the moved rows duplicated.
+    moved_hist = [core.remap_row_line(docs[BACKLOG][r.index], core.node_header(docs[BACKLOG]), core.NODE_HEADER)
+                  for r in closed_backlog]
+    moved_out = [core.remap_row_line(docs[core.GRAPH][r.index], core.node_header(docs[core.GRAPH]), core.NODE_HEADER)
+                 for r in out_rows]
+    moved_in = [core.remap_row_line(docs[BACKLOG][r.index], core.node_header(docs[BACKLOG]), core.NODE_HEADER)
+                for r in in_rows]
     for name, rows in ((core.GRAPH, out_rows), (BACKLOG, in_rows + closed_backlog)):
         targets = [r.line for r in rows]
         if targets:
@@ -357,6 +361,17 @@ def rebalance(graph, docs, core) -> list[str]:
                     continue
                 kept.append(line)
             docs[name] = kept
+    if moved_hist:
+        history = docs.setdefault(core.HISTORY, core.history_skeleton(graph))
+        core.insert_table_lines(history, "Nodes", core.NODE_HEADER, moved_hist)
+        moves += [f"{r.id} {r.state} backlog.md → history.md" for r in closed_backlog]
+    if moved_out:
+        backlog = docs.setdefault(BACKLOG, backlog_skeleton(graph, core))
+        core.insert_table_lines(backlog, "Nodes", core.NODE_HEADER, moved_out)
+        moves += [f"{r.id} graph.md → backlog.md" for r in out_rows]
+    if moved_in:
+        core.insert_table_lines(docs[core.GRAPH], "Nodes", core.NODE_HEADER, moved_in)
+        moves += [f"{r.id} backlog.md → graph.md" for r in in_rows]
     return moves
 
 

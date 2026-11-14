@@ -122,11 +122,11 @@ Each stage has three steps:
 
 1. **Adversarial review.** The operator's or the project's declared reviewer
    if there is one; otherwise a fresh reviewer that has not seen this
-   session: `opus` for the graph stage and for a node whose Model is `opus`,
-   else `sonnet`. Tell it to find defects, not to approve. Give it the
-   artifact, the spec section it answers, the contracts it touches, and the
-   review focus. It reports each finding with its location, the failure it
-   causes, and the evidence.
+   session: a `judgment` reviewer for the graph stage and for a `judgment`
+   node, else `implementation`. Tell it to find defects, not to approve.
+   Give it the artifact, the spec section it answers, the contracts it
+   touches, and the review focus. It reports each finding with its location,
+   the failure it causes, and the evidence.
 2. **Verify each finding.** Read the code or text it cites and reproduce it;
    for code, write a failing test. Mark it confirmed or refuted, with the
    evidence. Record a refuted finding with its reason and drop it.
@@ -147,9 +147,13 @@ Each stage has three steps:
    first unchecked step of their plan.
 5. Decide each stuck node: re-plan a `BLOCKED` node (§5.2 step 6); re-edge
    or drop a node that depends on a `DROPPED` node. Write the contracts
-   (format §4) and set the Model of backlog rows awaiting one, so they can
-   move into `graph.md` (`../work-graph/references/full-machinery.md`).
+   (format §4) and set the Capability of backlog rows awaiting one, so they
+   can move into `graph.md` (`../work-graph/references/full-machinery.md`).
    Without these decisions the graph never completes.
+
+Run a node's check alone as one command when resuming it, with at most
+trailing `2>&1`. Do not pipe it (including through `tee` or `cat`) or chain
+it with a write.
 
 ### 5.2 One node
 
@@ -166,21 +170,22 @@ never edit it.
    `nodes/<id>.md` is edited only in the node's checkout.
 3. **Attempt.** The implementer works the plan in the checkout, test first,
    ticking each checkbox and committing as the steps say.
-4. **Measure.** Run the node's Acceptance check and the verification floor
-   in the checkout. Read the output.
+4. **Measure.** Run the node's Acceptance check alone as one command, with at
+   most trailing `2>&1`; do not pipe it or chain it with a write. Run the
+   verification floor in the checkout. Read the output.
 5. **Verification stage** (§4) on the node's diff, against its contract and
    plan.
 6. **Keep or discard.**
    - Acceptance passes and the stage passes: keep (§5.5).
    - Otherwise: start a new round on the same branch, driven by the failure
      output and the confirmed findings. From the second round, set the
-     node's Model to `opus`.
+     node's Capability to `judgment`.
    - After three failed rounds: discard the node's branch and checkout, set
      `BLOCKED(<diagnosis>)`, and re-plan the node (split it, change its scope
      or its approach) before any further attempt. When the new plan is
      committed, set the node `PLANNED`; the round count starts again.
 
-### 5.3 Implementers, reviewers and models
+### 5.3 Implementers, reviewers and capabilities
 
 When the session can delegate, each running node gets one fresh implementer
 in its checkout, and its verification stage gets one fresh reviewer. Each
@@ -188,15 +193,22 @@ handoff carries the node file, the graph header, the contracts the node
 touches, and an output contract: status, commits, the Acceptance output, and
 any finding. Otherwise the controller runs the nodes itself, one at a time.
 
-A node's Model was chosen at creation. A node this skill creates (§5.4) or
-re-plans gets its Model by the same criteria: the work's complexity, nuance
-and technicality.
+A node's Capability was chosen at creation. A node this skill creates (§5.4)
+or re-plans gets its Capability by the same criteria: the work's complexity,
+nuance and technicality.
 
-| Model | Work |
+| Capability | Work |
 |---|---|
-| `haiku` | Mechanical work the plan fully decides: copying, renaming, fixtures, docs that restate code, running a check. |
-| `sonnet` | Ordinary implementation from a complete plan; node reviews. |
-| `opus` | Design choices the plan leaves open; core or shared code; concurrency, security or data-loss risk; interfaces between nodes; a node in its second or later round; planning a node whose spec is ambiguous; the graph-level verification stages. |
+| `lookup` | Read-only work: find files, trace code, summarize, classify, extract; run a check and report its output. Changes no file. |
+| `mechanical` | Small edits the plan fully decides: copying, renaming, fixtures, docs that restate code. |
+| `implementation` | Ordinary implementation from a complete plan; node reviews. |
+| `judgment` | Design choices the plan leaves open; core or shared code; concurrency, security or data-loss risk; interfaces between nodes; a node in its second or later round; planning a node whose spec is ambiguous; the graph-level verification stages. |
+
+A node that edits files is never `lookup`.
+
+A capability names the class of task. A session maps it to the subagent or model it uses for that class of task — `judgment` for demanding or nuanced coding work, `implementation` for normal coding work, `mechanical` and `lookup` for simple work — and never to a newer or frontier model beyond that class. When the session's configuration assigns a model to a role (an implementer, a reviewer, a planner), that assignment wins over the capability.
+
+Choose the subagent by its capability as the session describes it; do not set a model on the call when the session describes subagents.
 
 ### 5.4 Found issues
 
@@ -231,7 +243,7 @@ When every node is `DONE` or `DROPPED`:
 1. Merge the remote default branch into the work branch, and run the
    verification floor.
 2. Run the verification stage (§4) over the whole branch, from where it left
-   the default branch to its head, on the most capable model, with the
+   the default branch to its head, with a `judgment` reviewer and the
    header's review focus. Confirmed findings become nodes and run through
    §5.2.
 3. When the stage passes, deliver the branch in §2 precedence: the
@@ -310,7 +322,7 @@ The cycle:
    actionable finding, in remediation priority order (cycles > god classes > high coupling > dead code),
    with edges where one fix depends on another (a cycle break before the
    split of a module in that cycle), each with its contract (format §4) and
-   its Model (§5.3). Table order is the order in which ready nodes start. If
+   its Capability (§5.3). Table order is the order in which ready nodes start. If
    there is no confirmed actionable finding and the trend is stable, stop and
    report.
 2. **REMEDIATE.** Run the graph (§5). Each node makes the structural change
