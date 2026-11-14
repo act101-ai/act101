@@ -34,9 +34,19 @@ from pathlib import Path
 ID_RE = re.compile(r"^[A-Z]+-?\d+$")
 LEDGER_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
 STATE_RE = re.compile(r"^(TODO|PLANNED|IN-PROGRESS|DONE|BLOCKED\(.+\)|DROPPED\(.+\))$")
-MODELS = ("haiku", "sonnet", "opus")
+CAPABILITIES = ("lookup", "mechanical", "implementation", "judgment")
 NONE = "—"
-NODE_HEADER = ("ID", "Node", "Depends", "State", "Model", "Refs")
+NODE_HEADER = ("ID", "Node", "Depends", "State", "Capability", "Refs")
+# Backward compatibility: a node table or ledger export written with the
+# older Tier or Model column loads, its values mapped to capabilities.
+TIER_HEADER = ("ID", "Node", "Depends", "State", "Tier", "Refs")
+MODEL_HEADER = ("ID", "Node", "Depends", "State", "Model", "Refs")
+TIER_CAPABILITY = {"simple": "mechanical", "normal": "implementation", "demanding": "judgment"}
+MODEL_CAPABILITY = {"haiku": "mechanical", "sonnet": "implementation", "opus": "judgment"}
+LEGACY_HEADERS = (TIER_HEADER, MODEL_HEADER)
+LEGACY_VALUE_MAPS = {TIER_HEADER: TIER_CAPABILITY, MODEL_HEADER: MODEL_CAPABILITY}
+NODE_TABLE_HEADERS = (NODE_HEADER, TIER_HEADER, MODEL_HEADER)
+HEADER_ALIASES = {h: NODE_TABLE_HEADERS for h in NODE_TABLE_HEADERS}
 LOG_HEADER = ("Date", "Event")
 DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 SETTING_RE = re.compile(r"^\*\*([A-Za-z ]+):\*\*\s*(.*)$")
@@ -63,7 +73,7 @@ class Row:
     node: str
     depends: list[str]
     state: str
-    model: str
+    capability: str
     refs: str
     line: str  # normalized: "| " + " | ".join(cells) + " |"
     file: str
@@ -169,14 +179,28 @@ def find_table(lines: list[str], section: str, header: tuple[str, ...]) -> int |
         if line.startswith("## "):
             in_section = line[3:].strip() == section
             continue
-        if in_section and line.startswith("|") and tuple(split_cells(line)) == header:
+        if in_section and line.startswith("|") and tuple(split_cells(line)) in HEADER_ALIASES.get(header, (header,)):
             return i
     return None
 
 
+def node_header(lines: list[str]) -> tuple[str, ...]:
+    """The header of the node table in `lines`; NODE_HEADER when there is none."""
+    head = find_table(lines, "Nodes", NODE_HEADER)
+    return tuple(split_cells(lines[head].rstrip())) if head is not None else NODE_HEADER
+
+
 def section_tables(lines: list[str], section: str, header: tuple[str, ...]) -> list[tuple[int, list[str]]]:
     """(line index, cells) of every data row of the table with `header` under `## section`."""
-    out: list[tuple[int, list[str]]] = []
+    return [(i, cells) for i, cells, _ in table_rows(lines, section, header)]
+
+
+def table_rows(lines: list[str], section: str, header: tuple[str, ...]) -> list[tuple[int, list[str], tuple[str, ...]]]:
+    """(line index, cells, the header of its table) of every data row of the table
+    with `header`, or one of its aliases, under `## section`."""
+    headers = HEADER_ALIASES.get(header, (header,))
+    out: list[tuple[int, list[str], tuple[str, ...]]] = []
+    current: tuple[str, ...] = header
     in_section = in_table = False
     for i, raw in enumerate(lines):
         line = raw.rstrip()
@@ -190,22 +214,30 @@ def section_tables(lines: list[str], section: str, header: tuple[str, ...]) -> l
             in_table = False
             continue
         cells = split_cells(line)
-        if tuple(cells) == header:
-            in_table = True
+        if tuple(cells) in headers:
+            in_table, current = True, tuple(cells)
             continue
         if in_table and not is_separator(line):
-            out.append((i, cells))
+            out.append((i, cells, current))
     return out
 
 
 def parse_rows(lines: list[str], file: str, malformed: list[str]) -> list[Row]:
     rows = []
-    for index, cells in section_tables(lines, "Nodes", NODE_HEADER):
+    for index, cells, header in table_rows(lines, "Nodes", NODE_HEADER):
         if len(cells) != len(NODE_HEADER) or not ID_RE.match(cells[0]):
             malformed.append(f"{file}: malformed node row: {normal(cells)}")
             continue
         depends = [] if cells[2] in (NONE, "") else [d.strip() for d in cells[2].split(",")]
-        rows.append(Row(cells[0], cells[1], depends, cells[3], cells[4], cells[5], normal(cells), file, index))
+        # A legacy table carries its own vocabulary: a capability value under a
+        # Tier or Model header is ambiguous durable state, so refuse it and name
+        # the migration (rewrite the header). Mapped legacy values load above.
+        if header in LEGACY_HEADERS and cells[4] in CAPABILITIES:
+            malformed.append(f"{file}: {cells[0]}: capability value '{cells[4]}' under a "
+                             f"legacy {header[4]} header - rewrite the table header to Capability")
+            continue
+        capability = LEGACY_VALUE_MAPS.get(header, {}).get(cells[4], cells[4])
+        rows.append(Row(cells[0], cells[1], depends, cells[3], capability, cells[5], normal(cells), file, index))
     return rows
 
 
@@ -214,12 +246,16 @@ def ledger_rows(data: object, malformed: list[str]) -> list[Row]:
     if not isinstance(data, list):
         malformed.append("rows: the export must be a JSON list of node objects")
         return []
+    legacy_keys = {"tier": TIER_CAPABILITY, "model": MODEL_CAPABILITY}
     rows = []
     for n, item in enumerate(data, 1):
         if not isinstance(item, dict):
             malformed.append(f"row {n}: not an object")
             continue
-        missing = [k for k in ("id", "depends", "state", "model") if k not in item]
+        # capability wins; the older tier/model keys load with mapped values.
+        key = "capability" if "capability" in item else next(
+            (k for k in legacy_keys if k in item), "capability")
+        missing = [k for k in ("id", "depends", "state", key) if k not in item]
         if missing:
             malformed.append(f"row {n}: missing {', '.join(missing)}")
             continue
@@ -229,8 +265,10 @@ def ledger_rows(data: object, malformed: list[str]) -> list[Row]:
             continue
         depends = [str(d) for d in item["depends"]]
         node, refs = str(item.get("node", "")), str(item.get("refs", ""))
-        line = normal([node_id, node, ", ".join(depends) or NONE, str(item["state"]), str(item["model"]), refs])
-        rows.append(Row(node_id, node, depends, str(item["state"]), str(item["model"]), refs, line, "ledger"))
+        value = str(item[key])
+        capability = legacy_keys.get(key, {}).get(value, value)
+        line = normal([node_id, node, ", ".join(depends) or NONE, str(item["state"]), value, refs])
+        rows.append(Row(node_id, node, depends, str(item["state"]), capability, refs, line, "ledger"))
     return rows
 
 
@@ -422,8 +460,9 @@ def check(graph: Graph) -> list[str]:
         seen.add(r.id)
         if not STATE_RE.match(r.state):
             defects.append(f"{r.id}: state {r.state} is not TODO, PLANNED, IN-PROGRESS, DONE, BLOCKED(reason) or DROPPED(evidence)")
-        if r.model not in MODELS and not (r.model == NONE and (r.closed or (ext_for(graph) and EXT.model_optional(r)))):
-            defects.append(f"{r.id}: model {r.model} is not haiku, sonnet or opus")
+        if r.capability not in CAPABILITIES and not (
+                r.capability == NONE and (r.closed or (ext_for(graph) and EXT.model_optional(r)))):
+            defects.append(f"{r.id}: capability {r.capability} is not lookup, mechanical, implementation or judgment")
         if len(r.line) > ROW_CAP and not graph.ledger:
             defects.append(f"{r.id}: row exceeds {ROW_CAP} characters ({len(r.line)}); move detail to nodes/{r.id}.md")
         for dep in r.depends:
@@ -591,7 +630,11 @@ def table_skeleton(section: str, header: tuple[str, ...]) -> list[str]:
 
 def insert_table_lines(lines: list[str], section: str, header: tuple[str, ...], new: list[str]) -> None:
     """Append `new` after the last row of the `header` table under `## section`;
-    add the section and the table at the end of the file when they are absent."""
+    add the section and the table at the end of the file when they are absent.
+    A legacy Tier or Model node table that receives node rows is migrated
+    first — header rewritten to Capability, existing values mapped — because
+    the appended rows carry capability values, which a legacy table refuses
+    on load. That rewrite is the migration its own refusal message names."""
     if not new:
         return
     head = find_table(lines, section, header)
@@ -600,6 +643,19 @@ def insert_table_lines(lines: list[str], section: str, header: tuple[str, ...], 
             lines.append("")
         lines.extend(table_skeleton(section, header))
         head = len(lines) - 2
+    elif header == NODE_HEADER:
+        found = tuple(split_cells(lines[head].rstrip()))
+        if found in LEGACY_HEADERS:
+            legacy = LEGACY_VALUE_MAPS[found]
+            lines[head] = "| " + " | ".join(NODE_HEADER) + " |"
+            row_i = head + 1
+            while row_i < len(lines) and lines[row_i].lstrip().startswith("|"):
+                if not is_separator(lines[row_i]):
+                    cells = split_cells(lines[row_i])
+                    if len(cells) == len(NODE_HEADER) and cells[4] in legacy:
+                        cells[4] = legacy[cells[4]]
+                        lines[row_i] = "| " + " | ".join(cells) + " |"
+                row_i += 1
     end = head + 1
     while end < len(lines) and lines[end].lstrip().startswith("|"):
         end += 1
@@ -610,7 +666,21 @@ def history_skeleton(graph: Graph) -> list[str]:
     title = next((line[2:].strip() for line in graph.docs.get(GRAPH, []) if line.startswith("# ")), "Work Graph")
     return ([f"# {title} — History", "",
              "Closed node rows and Log entries moved from graph.md, verbatim. Append-only.", ""]
-            + table_skeleton("Nodes", NODE_HEADER) + [""] + table_skeleton("Log", LOG_HEADER))
+            + table_skeleton("Nodes", node_header(graph.docs.get(GRAPH, []))) + [""] + table_skeleton("Log", LOG_HEADER))
+
+
+def remap_row_line(line: str, from_header: tuple[str, ...], to_header: tuple[str, ...]) -> str:
+    """A node row moved from a table whose header is `from_header` into one whose
+    header is `to_header` takes the destination's vocabulary in the capability
+    column: a Tier or Model row moved into a Capability table is rewritten with
+    the mapped value; any other move stays verbatim."""
+    legacy = LEGACY_VALUE_MAPS.get(from_header)
+    if legacy is None or to_header != NODE_HEADER:
+        return line
+    cells = split_cells(line)
+    if len(cells) == len(NODE_HEADER):
+        cells[4] = legacy.get(cells[4], cells[4])
+    return normal(cells)
 
 
 def write_docs(graph: Graph, docs: dict[str, list[str]]) -> None:
@@ -624,7 +694,9 @@ def write_docs(graph: Graph, docs: dict[str, list[str]]) -> None:
 
 def trim(graph: Graph, docs: dict[str, list[str]]) -> list[str]:
     """Move closed rows of graph.md beyond the cap (oldest first, unless a ledger
-    holds the rows) and Log entries beyond the window to history.md, verbatim."""
+    holds the rows) and Log entries beyond the window to history.md, verbatim,
+    except that a Tier or Model row takes its mapped capability value; a legacy
+    history table receiving the rows is migrated (see insert_table_lines)."""
     lines = docs[GRAPH]
     closed = [] if graph.ledger else [r for r in graph.rows if r.closed]
     excess = closed[: max(0, len(closed) - CLOSED_CAP)]
@@ -633,7 +705,9 @@ def trim(graph: Graph, docs: dict[str, list[str]]) -> list[str]:
     if not excess and not old_log:
         return []
     history = docs.setdefault(HISTORY, history_skeleton(graph))
-    insert_table_lines(history, "Nodes", NODE_HEADER, [lines[r.index] for r in excess])
+    src = node_header(lines)
+    moved = [remap_row_line(lines[r.index], src, NODE_HEADER) for r in excess]
+    insert_table_lines(history, "Nodes", NODE_HEADER, moved)
     insert_table_lines(history, "Log", LOG_HEADER, [lines[i] for i, _ in old_log])
     for i in sorted([r.index for r in excess] + [i for i, _ in old_log], reverse=True):
         del lines[i]

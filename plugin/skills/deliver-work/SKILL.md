@@ -64,7 +64,7 @@ request.
 3. **Review stage.** Review the whole branch, from where it left its base to
    its head, adversarially. The reviewer, in this order: the operator's or
    the project's declared reviewer; else a fresh reviewer that has not seen
-   this session, on the most capable model. Brief the reviewer with the
+   this session, with the `judgment` capability. Brief the reviewer with the
    range, the requirements and the project's rules; not this session's
    history. Its task: find defects, not approve; report each with its
    location, the failure it causes and the evidence, and name each
@@ -78,6 +78,8 @@ request.
      shipped, marked as the operator's call.
    - Keep each refuted finding with its evidence for the report.
    - The stage passes when no confirmed finding is open.
+
+A capability names the class of task. A session maps it to the subagent or model it uses for that class of task — `judgment` for demanding or nuanced coding work, `implementation` for normal coding work, `mechanical` and `lookup` for simple work — and never to a newer or frontier model beyond that class. When the session's configuration assigns a model to a role (an implementer, a reviewer, a planner), that assignment wins over the capability.
 
 4. **Review feedback** from the operator or a PR reviewer. Read every item
    first, and ask about each unclear item before changing anything: items

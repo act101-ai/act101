@@ -37,9 +37,16 @@ If neither is available, report that and stop.
 ## Phase 2: Follow-up
 
 From the summaries, pick the top 3-5 findings and run one targeted follow-up each:
-`skeleton` on each top hotspot to characterize it, and for untested high-coupling
-files a note of the compound risk. One round only; this is a health check, not an
-audit.
+`skeleton` on each top hotspot to characterize it, plus `analyze_patterns` scoped
+to that hotspot with `tier: "fast"` — `file=<path>` per file, or one call with
+`include` set to the hotspots' directories and only that file's findings kept;
+the default `all` would build the workspace graph on every call — naming its
+structural problems (`pattern`, `severity`, `symbol`, `line`,
+`thresholds_exceeded`); for
+untested high-coupling files a note of the compound risk; and `analyze_cycles`
+over the audited scope (`include` = the scope's directories), reporting
+`total_cycles` and the largest cycles' `files`. One round only; this is a health
+check, not an audit.
 
 ## Trend
 
@@ -112,6 +119,15 @@ Per gap: file path, risk factors, suggested test type. State the `evidence` basi
 
 What improved, what degraded, what is new. If `scan` ran with a baseline, lead the
 security line with the `new` / `fixed` / `baselined` counts.
+
+## Coverage and limits
+The scope: the `include` directories used, or "the workspace". Test files are
+excluded by convention — `summary.test_files_excluded` (hotspots, clones) says
+how many; when the operator asked for tests to be included, say which calls ran
+that way. Duplication: the `min_tokens` used, and clones' v1 scope —
+subtree-aligned type-1 (exact) and type-2 (renamed) only, type-3 (gapped) not
+detected. Standing caveat: pattern findings are threshold measurements; a file
+with no findings is below the thresholds, not proven healthy.
 
 ## Suggested Fixes
 Prioritized act MCP tool calls or skills to run.

@@ -21,7 +21,7 @@
 #   curl -sSL https://act101.ai/install.sh | sh -s uninstall
 
 # ACT_DEFAULT_VERSION is substituted at release time by the build-installers job.
-: "${ACT_DEFAULT_VERSION:=v2.9.0}"
+: "${ACT_DEFAULT_VERSION:=v2.9.1}"
 : "${ACT_GITHUB_REPO:=act101-ai/act101}"
 : "${ACT_CHANNEL:=stable}"
 
@@ -389,7 +389,10 @@ VER_NO_V="${VERSION#v}"
 # Download + verify
 # ---------------------------------------------------------------------------
 TMPDIR=$(mktemp -d 2>/dev/null || mktemp -d -t act-install)
-trap 'rm -rf "$TMPDIR"' EXIT INT TERM
+# The staged copy of the downloaded binary (set during install; the trap
+# removes a leftover if the script dies between staging and the replace).
+STAGED=
+trap 'rm -rf "$TMPDIR"; [ -z "$STAGED" ] || rm -f "$STAGED"' EXIT INT TERM
 BASE="https://github.com/$ACT_GITHUB_REPO/releases/download/$VERSION"
 ASSET="act-$TARGET.tar.gz"
 
@@ -420,7 +423,23 @@ else
 
     run_cmd mkdir -p "$PREFIX"
     run_cmd tar xzf "$TMPDIR/$ASSET" -C "$TMPDIR"
-    run_cmd install -m 755 "$TMPDIR/act" "$PREFIX/act"
+    # Stage beside the target, prove the downloaded binary runs on this
+    # machine, and only then replace it: a broken download must not take the
+    # working install with it (act-lite a2cdaaf).
+    STAGED="$PREFIX/.act.$$.tmp"
+    if ! run_cmd install -m 755 "$TMPDIR/act" "$STAGED"; then
+        echo "error: could not write into $PREFIX" >&2
+        exit 1
+    fi
+    if ! "$STAGED" --version >/dev/null 2>&1; then
+        rm -f "$STAGED"
+        echo "error: the downloaded act does not run; the existing install was not changed" >&2
+        exit 1
+    fi
+    if ! run_cmd mv -f "$STAGED" "$PREFIX/act"; then
+        echo "error: could not replace $PREFIX/act" >&2
+        exit 1
+    fi
     act_step "INSTALL" "$PREFIX/act"
 fi
 

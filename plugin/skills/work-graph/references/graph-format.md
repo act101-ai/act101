@@ -68,18 +68,26 @@ The header fixes the boundaries before any work starts.
 ## 3. The node table
 
 ```
-| ID | Node | Depends | State | Model | Refs |
-|----|------|---------|-------|-------|------|
-| N1 | Parse config file | — | DONE | sonnet | a1b2c3d; acceptance 12/12 |
-| N2 | Validate config | N1 | IN-PROGRESS | sonnet | wt .worktrees/cfg/N2 |
-| N3 | Config defaults | N1 | TODO | haiku | — |
+| ID | Node | Depends | State | Capability | Refs |
+|----|------|---------|-------|------------|------|
+| N1 | Parse config file | — | DONE | implementation | a1b2c3d; acceptance 12/12 |
+| N2 | Validate config | N1 | IN-PROGRESS | implementation | wt .worktrees/cfg/N2 |
+| N3 | Config defaults | N1 | TODO | mechanical | — |
 ```
 
 - States: `TODO` → `PLANNED` → `IN-PROGRESS` → `DONE`, or `BLOCKED(reason)`,
   or `DROPPED(evidence)`.
 - A row is at most 600 characters; a Log entry at most 300. Detail goes in
   the node file or the commit message.
-- `Depends` and `Model` live only here, never in the node file.
+- Capability is one of `lookup`, `mechanical`, `implementation` or
+  `judgment`, chosen by the planning skill's capability table.
+- `Depends` and `Capability` live only here, never in the node file.
+- Backward compatibility: a table whose header has `Tier` in place of
+  `Capability` loads, with its values mapped: `simple` → `mechanical`,
+  `normal` → `implementation`, `demanding` → `judgment`; one whose header
+  has `Model` loads the same way: `haiku` → `mechanical`, `sonnet` →
+  `implementation`, `opus` → `judgment`. A ledger export (§6) with the key
+  `tier` or `model` in place of `capability` loads the same way.
 
 ## 4. The node contract
 
