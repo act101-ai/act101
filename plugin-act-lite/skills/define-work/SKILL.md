@@ -99,7 +99,11 @@ A workflow applies only when it is written down or the operator states it.
       statement is context the document lacks: add it.
    2. **Critic.** Brief: you are an expert reviewer of this codebase; find
       what the design misses, the assumptions that are wrong and the edge
-      cases it does not handle; report each with its evidence, most
+      cases it does not handle; probe at least the other entry points to
+      the same behavior, the state left when a write fails partway, which
+      component owns each piece of state and whether every reader agrees
+      with it, hostile, malformed and large input, and the seams with
+      recently shipped work; report each with its evidence, most
       important first. Verify each finding against the repo and the
       conversation. A confirmed finding changes the document; a refuted one
       is recorded with its reason and dropped. The read passes when only
