@@ -1,7 +1,7 @@
 {
   "mcpServers": {
     "act-lite": {
-      "command": "act-lite",
+      "command": "${CLAUDE_PLUGIN_ROOT}/bin/act-lite-mcp",
       "args": ["mcp", "serve"]
     }
   }
