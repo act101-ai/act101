@@ -73,8 +73,9 @@ answer in the header with its citation.
 Read the node's spec section. Verify its premises against the live code: the
 node's dependencies have landed since the graph was created, and the plan is
 written against what they actually produced. Never trust earlier summaries,
-plans or commit messages. If a premise has drifted, add a dated amendment to
-the spec, then plan; or set `DROPPED(<evidence>)` if the premise is gone.
+plans or commit messages. If a premise has drifted, rewrite the spec section
+to match (§5.4), then plan; or set `DROPPED(<evidence>)` if the premise is
+gone.
 
 ### 3.2 Write the plan
 
@@ -125,8 +126,17 @@ Each stage has three steps:
    session: a `judgment` reviewer for the graph stage and for a `judgment`
    node, else `implementation`. Tell it to find defects, not to approve.
    Give it the artifact, the spec section it answers, the contracts it
-   touches, and the review focus. It reports each finding with its location,
-   the failure it causes, and the evidence.
+   touches, and the review focus. Give nothing else: no summary, reasoning
+   or concern from this session. It reports each finding with its location,
+   the failure it causes, and the evidence. Also tell it:
+   - for a node's plan: open every path, symbol and signature the plan
+     cites and confirm each against the live code; search the code for an
+     existing function that already does what a step builds;
+   - for a node's diff and for the whole branch: probe at least every entry
+     point that reaches the changed code; the state left when a write fails
+     partway; which component owns each piece of state the change touches,
+     and whether every reader agrees with it; hostile, malformed and large
+     input; and the seams with recently merged work.
 2. **Verify each finding.** Read the code or text it cites and reproduce it;
    for code, write a failing test. Mark it confirmed or refuted, with the
    evidence. Record a refuted finding with its reason and drop it.
@@ -213,11 +223,20 @@ Choose the subagent by its capability as the session describes it; do not set a 
 ### 5.4 Found issues
 
 Every defect found during a node is in scope. A defect that blocks the node
-is fixed in the node. Any other defect gets a dated spec amendment and a new
-node with its contract and edges (or an inbox row, see
+is fixed in the node. Any other defect is written into the spec (below) and
+gets a new node with its contract and edges (or an inbox row, see
 `../work-graph/references/full-machinery.md`), and the graph is validated
 again. Implementers and reviewers report defects in their output; the
 controller writes the new node. Nothing goes to a follow-ups list.
+
+Change a spec by rewriting the affected section as final text, never by
+appending an amendment: the implementer reads the section, and two texts that
+disagree mislead it. Keep the section's heading and number, because the graph
+points to them. Add one line to the spec's `## Change log` (create it at the
+end if absent): the date, the section, who decided (the operator, or the
+author's call), and the reason. A section an agent rewrote is the author's
+call until the operator approves it, and is never a citation on its own
+authority.
 
 ### 5.5 Keep: merge into the work branch
 

@@ -142,7 +142,8 @@ The stage has three steps:
    if there is one; otherwise a fresh reviewer that has not seen this
    session, with the `judgment` capability. Tell it to find defects, not to
    approve. Give it the graph, the authority specs it answers, and the review
-   focus. It reports each finding with its location, the failure it causes,
+   focus. Give nothing else: no summary, reasoning or concern from this
+   session. It reports each finding with its location, the failure it causes,
    and the evidence.
 2. **Verify each finding.** Read the spec or graph text it cites and
    reproduce it. Mark it confirmed or refuted, with the evidence. Record a
