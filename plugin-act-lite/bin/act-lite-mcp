@@ -36,6 +36,13 @@ fi
 data=${CLAUDE_PLUGIN_DATA:-$root/.data}
 bin=$data/$tag/act-lite
 
+# A start stopped during its download leaves a .download.* directory. One older
+# than 10 minutes is not in use: Claude Code stops a server that does not start
+# within 30 seconds.
+if [ -d "$data" ]; then
+  find "$data" -maxdepth 1 -name '.download.*' -mmin +10 -exec rm -rf {} + 2>/dev/null || true
+fi
+
 if [ ! -x "$bin" ]; then
   os=${ACT_LITE_UNAME_S:-$(uname -s)}
   arch=${ACT_LITE_UNAME_M:-$(uname -m)}
