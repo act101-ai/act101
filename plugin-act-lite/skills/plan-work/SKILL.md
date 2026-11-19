@@ -142,7 +142,8 @@ The stage has three steps:
    if there is one; otherwise a fresh reviewer that has not seen this
    session, with the `judgment` capability. Tell it to find defects, not to
    approve. Give it the graph, the authority specs it answers, and the
-   review focus. It reports each finding with its location, the failure it
+   review focus. Give nothing else: no summary, reasoning or concern from
+   this session. It reports each finding with its location, the failure it
    causes, and the evidence. The handoff begins with these four lines,
    written even when no tool reads them, where `<program>` is the graph's
    directory name:

@@ -104,8 +104,8 @@ Every node gets a contract at creation, in `nodes/<id>.md`:
   pass. It is fixed at creation and does not change between attempts. It is
   part of the contract, not a rule under the approval notice: it takes its
   authority from the spec and the skill's defaults; for a node created from a
-  found defect, from the dated spec amendment that records the defect, which
-  approves no rule.
+  found defect, from the spec text and change-log line that record the
+  defect, which approve no rule.
 - A name is the identifier before `(`, with its path: `config::load`,
   `Config.load`. A keyword in front of it (`fn`, `def`) is ignored; without
   `(`, the name is the leading identifier (`MAX: usize` declares `MAX`). A
