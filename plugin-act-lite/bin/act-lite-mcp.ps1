@@ -43,6 +43,16 @@ if ($onPath) {
 $data = if ($env:CLAUDE_PLUGIN_DATA) { $env:CLAUDE_PLUGIN_DATA } else { Join-Path $root '.data' }
 $exe = Join-Path $data "$tag\act-lite.exe"
 
+# A start stopped during its download leaves a .download.* directory. One older
+# than 10 minutes is not in use: Claude Code stops a server that does not start
+# within 30 seconds.
+if (Test-Path -PathType Container -LiteralPath $data) {
+  $cutoff = (Get-Date).AddMinutes(-10)
+  Get-ChildItem -LiteralPath $data -Directory -Force -Filter '.download.*' |
+    Where-Object { $_.LastWriteTime -lt $cutoff } |
+    Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+}
+
 if (-not (Test-Path -PathType Leaf -LiteralPath $exe)) {
   $arch = if ($env:PROCESSOR_ARCHITEW6432) { $env:PROCESSOR_ARCHITEW6432 } else { $env:PROCESSOR_ARCHITECTURE }
   if ($arch -ne 'AMD64') { Exit-Launcher "unsupported platform: Windows $arch (supported: Windows on x86_64)" }
