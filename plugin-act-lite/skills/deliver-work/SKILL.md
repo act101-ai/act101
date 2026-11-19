@@ -65,17 +65,18 @@ request.
    its head, adversarially. The reviewer, in this order: the operator's or
    the project's declared reviewer; else a fresh reviewer that has not seen
    this session, with the `judgment` capability. Brief the reviewer with the
-   range, the requirements and the project's rules; not this session's
-   history. Its task: find defects, not approve; report each with its
+   range, the requirements and the project's rules, and nothing else: no
+   summary, reasoning, concern or history from this session. Its task: find defects, not approve; report each with its
    location, the failure it causes and the evidence, and name each
    requirement the diff does not meet.
    - Verify each finding: read the cited code and reproduce it, for code
      with a failing test. Mark it confirmed or refuted, with the evidence.
    - Fix each confirmed finding test-first, then run step 2's checks again.
    - A requirement the delivered code does not meet is fixed in the code;
-     when the operator accepts the delivered behavior instead, write a dated
-     amendment to the requirement document so that it describes what
-     shipped, marked as the operator's call.
+     when the operator accepts the delivered behavior instead, rewrite the
+     affected section of the requirement document as final text that
+     describes what shipped, and add a dated line to its change log, marked
+     as the operator's call.
    - Keep each refuted finding with its evidence for the report.
    - The stage passes when no confirmed finding is open.
 
@@ -162,7 +163,7 @@ A capability names the class of task. A session maps it to the subagent or model
 - every commit hash on the branch since its base;
 - each check and its result, and the CI state;
 - the review: fixed findings, refuted findings with their evidence, and the
-  requirement amendments written;
+  requirement sections rewritten;
 - every open item, every step skipped at the operator's request, and every
   check that did not run, marked not run with its reason.
 
