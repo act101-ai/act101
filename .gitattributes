@@ -1,0 +1,2 @@
+# cmd.exe reads batch files with CRLF endings; keep those bytes.
+plugin-act-lite/bin/*.cmd -text

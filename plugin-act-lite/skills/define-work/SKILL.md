@@ -45,15 +45,34 @@ A workflow applies only when it is written down or the operator states it.
    where the request lands, and how the request relates to it. The operator
    corrects it before the first question.
 
-3. **Questions.** One question per message, in one sentence. Open questions
-   first, anchored in a concrete case ("walk me through the last time this
-   went wrong"); offer options only when the operator is stuck. When the
-   operator defers, propose a concrete default. Cover, as ground and not as a
-   script: purpose and what success looks like; goals; non-goals; what would
-   make it a failure even if it works; constraints; existing work and earlier
-   attempts; which implementation choices the operator wants to make and
-   which they leave to you. A choice you make goes in the design as the
-   author's call, never as the operator's.
+3. **Questions.** A question costs the operator more than anything else you
+   send, so ask few, and make each one answerable in a word. Drop a question
+   whose answer would not change the design. Decide a minor one yourself, as
+   an author's call. Order the rest so that the question whose answer settles
+   the most others is first. After the step 2 playback, list them once, one
+   short line each, then ask the first in full.
+
+   A question in full is one decision: your hypothesis and its reason, your
+   recommendation, and what each answer changes, so that "yes" is a complete
+   answer. Ask an open question only where you cannot form a hypothesis, as
+   for purpose, and anchor it in a concrete case ("walk me through the last
+   time this went wrong"). Do not ask for dates, deadlines or estimates: the
+   order of the work comes from what depends on what, and the operator states
+   a time constraint when one exists.
+
+   The operator may answer the one question, answer several, or give
+   information that settles others without naming them. Read each reply
+   against the whole list. Say in one line what it closed and what it
+   opened, then ask the next open question in full. Do not show the list
+   again. When the operator defers, the choice is yours: make it, and record
+   it as an author's call.
+
+   Cover, as ground and not as a script: purpose and what success looks
+   like; goals; non-goals; what would make it a failure even if it works;
+   constraints; existing work and earlier attempts; which implementation
+   choices the operator wants to make and which they leave to you. A choice
+   you make goes in the design as the author's call, never as the
+   operator's.
 
    Challenge the request. Name each assumption in it that the recon
    contradicts or that you doubt, with the evidence, and say where you
@@ -119,8 +138,8 @@ A workflow applies only when it is written down or the operator states it.
       - the operator's: only the operator can answer it, and the answer
         changes what gets built.
 
-      Send the operator's questions in one message per run, most important
-      first, and write the answers in.
+      Ask the operator's questions as in step 3, most important first, and
+      write the answers in.
 
 8. **Approval gate.** Nothing is built before the operator approves the
    design document. Building is product code, scaffolding, dependency
