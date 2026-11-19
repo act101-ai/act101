@@ -25,7 +25,7 @@ def marketplace_install_smoke() -> None:
         plugins = json.loads((ROOT / manifest).read_text())["plugins"]
         act_lite = [p for p in plugins if p["name"] == "act-lite"]
         assert len(act_lite) == 1, f"{manifest}: expected one act-lite entry"
-        assert act_lite[0]["version"] == "1.2.3"
+        assert act_lite[0]["version"] == "1.2.6"
         source = act_lite[0]["source"]
         assert source == "./plugin-act-lite" or source == {"source": "local", "path": "./plugin-act-lite"}
 
@@ -35,7 +35,7 @@ def marketplace_install_smoke() -> None:
     assert (PLUGIN / ".codex-plugin/mcp.json").is_file()
     binary = os.environ.get("ACT_LITE_BIN") or shutil.which("act-lite")
     assert binary and Path(binary).is_file(), "install act-lite or set ACT_LITE_BIN"
-    assert "act-lite 1.2.3" in run(str(binary), "--version", env=os.environ.copy())
+    assert "act-lite 1.2.6" in run(str(binary), "--version", env=os.environ.copy())
 
     with tempfile.TemporaryDirectory(prefix="act-lite-marketplace-") as scratch:
         scratch = Path(scratch)
