@@ -66,7 +66,7 @@ One entry per directory in `skills/`; each skill's own file carries its tier and
 - `code-review` — Review code for bugs, complexity, unused symbols, and structural issues using AST-aware analysis
 - `dead-in-production` — Safely remove code: statically unreferenced ∩ never covered by tests ∩ never executed in production
 - `deepening-survey` — Survey for shallow modules (wide interface, little implementation) and rank the deepenings worth making, each gated by `simulate`
-- `define-work` — Turn a request into an approved design before any code is written: repo recon, one question at a time, three fresh reads of the design (comprehension, critic, sufficiency), and an approval gate
+- `define-work` — Turn a request into a design document with no open question, in a mergeable pull request, before any code is written: repo recon, questions only when they pass the question test, the author's own checks, one audit by a fresh reviewer, and the operator's approval before anything is built
 - `deliver-work` — Take finished work to a reviewed, CI-green pull request: every CI check run locally, an adversarial branch review, the PR with its evidence, CI watched to green; merges and discards only on the operator's request
 - `execute-work` — Run a work graph to completion: ready nodes scheduled in parallel, each node planned and implemented test-first in its own checkout through its acceptance check and a verification stage, kept or discarded, archived, and the finished branch handed to delivery
 - `diagnose-defect` — Find a defect's root cause and fix it test-first: a deterministic reproduction, the code path read end to end, ranked hypotheses, a bisect for regressions, a fix at the cause, and the same mechanism found elsewhere
@@ -74,7 +74,7 @@ One entry per directory in `skills/`; each skill's own file carries its tier and
 - `hot-path-refactor` — Rank refactor targets by runtime profile hotness × static complexity and coupling
 - `migration-assessment` — Assess migration/port readiness: what makes this codebase hard to rewrite
 - `onboarding-map` — Guided reading order for an unfamiliar codebase, annotated with ownership and risk
-- `plan-work` — Plan work as a resumable work graph: nodes with contracts, dependencies and fixed acceptance checks, cut from an approved design, reviewed, validated and committed for execution
+- `plan-work` — Plan work as a resumable work graph: nodes with contracts, dependencies and fixed acceptance checks, cut from an approved design, validated, reviewed and delivered in a mergeable pull request
 - `port-verify` — Gate a cross-language port for correctness: behavioral equivalence, contract parity, manifest drift
 - `refactor-receipt` — Emit durable content-addressed receipts proving a refactor was verified
 - `refactoring` — Semantic refactoring with preview and undo: rename, extract, inline, move

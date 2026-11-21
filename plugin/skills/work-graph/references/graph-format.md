@@ -75,6 +75,8 @@ The header fixes the boundaries before any work starts.
 | N3 | Config defaults | N1 | TODO | mechanical | — |
 ```
 
+- An id is one or more capital letters, an optional `-`, then one or more
+  digits (`N3`, `HUD-12`).
 - States: `TODO` → `PLANNED` → `IN-PROGRESS` → `DONE`, or `BLOCKED(reason)`,
   or `DROPPED(evidence)`.
 - A row is at most 600 characters; a Log entry at most 300. Detail goes in
@@ -151,5 +153,6 @@ node it depends on, no Files overlap between nodes with no path between
 them, a `parallel` setting that is a whole number or `off`, and no more
 closed rows or Log entries than the archive caps allow (25 closed rows and
 14 days of Log, counted back from the newest entry; with another ledger,
-only the Log window applies). Confirm validity at creation and at every
-resume, before any work.
+only the Log window applies). These caps count closed rows. The limit on
+open rows, and the backlog that holds the rest, are in `full-machinery.md`.
+Confirm validity at creation and at every resume, before any work.

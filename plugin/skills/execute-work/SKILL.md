@@ -41,6 +41,29 @@ The graph's format is normative in
 **Findings:** line, `backlog.md` holds rows, or `graph.md` holds more than
 25 open rows.
 
+## Who owns what
+
+- **The operator defines the terms.** What the operator said, in this
+  conversation or in a project file, is decided. Do not ask it again, do
+  not ask the operator to confirm it, and do not redefine it. "Done" means
+  what the operator or the project says it means. Without such a
+  definition, done is: the work branch is committed, pushed, and in a pull
+  request that can merge, with its checks green and no conflict.
+- **The author owns the work.** The author is the session that holds the
+  conversation. When a subagent writes the text, its brief holds every
+  decision, and the session that wrote the brief is still the author. A
+  defect in the work is the author's failure. A review measures the
+  author; it does not move the responsibility, and it is not run again in
+  place of the author's own checks.
+- **Mechanics are the author's.** Structure, order, internal names, how to
+  test, and how to fix a finding are never questions for the operator.
+- **No stop loses work.** Commit and push each artifact when it is first
+  written and after each change, so that the session can end at any moment
+  without loss.
+- **No stop hands the work back.** Do not end a step by telling the
+  operator what to type to get the next step. Do the steps the request
+  includes, and stop at done.
+
 ## 1. Entry
 
 | Request | Action |
@@ -63,8 +86,8 @@ This skill's procedures are defaults. Precedence: an operator instruction,
 then a workflow the graph header records (**Workflows:**) or the project
 declares, then this skill's defaults. A workflow applies only when it is
 written down or the operator states it. If an adopted workflow conflicts
-with a rule in this skill, ask the operator which applies and record the
-answer in the header with its citation.
+with a default in this skill, the higher one in this order applies. Record
+it in the header with its citation.
 
 ## 3. Plan a node (`TODO` → `PLANNED`)
 
@@ -97,7 +120,7 @@ the interface and the test are exact.
 - **No placeholders.** "TBD", "handle edge cases", "add validation", "same as
   N3", and any name that no node defines are defects.
 
-### 3.3 Self-review
+### 3.3 Author's checks
 
 Run these checks once, and fix what they find in place:
 
@@ -111,14 +134,17 @@ Run these checks once, and fix what they find in place:
    test.
 5. **Proportion.** A plan longer than the code it describes has written the
    code. Replace bodies with signatures and assertions.
+6. **Live code.** Open every path, symbol and signature the plan cites
+   and confirm each against the code as it is now. Search the code for an
+   existing function that already does what a step builds.
 
-Then run the verification stage (§4) on the plan. The controller then sets
-the node `PLANNED` (§5.2 step 1).
+The plan's author owns these checks; no separate review of the plan runs.
+The controller then sets the node `PLANNED` (§5.2 step 1).
 
 ## 4. Verification stages
 
-There are three verification stages in execution: a node's plan (§3.3), a
-node before it merges (§5.2 step 5), and the graph at completion (§5.6).
+There are two verification stages in execution: a node before it merges
+(§5.2 step 5), and the graph at completion (§5.6).
 Each stage has three steps:
 
 1. **Adversarial review.** The operator's or the project's declared reviewer
@@ -129,9 +155,6 @@ Each stage has three steps:
    touches, and the review focus. Give nothing else: no summary, reasoning
    or concern from this session. It reports each finding with its location,
    the failure it causes, and the evidence. Also tell it:
-   - for a node's plan: open every path, symbol and signature the plan
-     cites and confirm each against the live code; search the code for an
-     existing function that already does what a step builds;
    - for a node's diff and for the whole branch: probe at least every entry
      point that reaches the changed code; the state left when a write fails
      partway; which component owns each piece of state the change touches,
@@ -152,10 +175,13 @@ Each stage has three steps:
 2. Read its state (counts per state, the ready set, the schedule, the stuck
    nodes), validate it (format §7), and run the **Hygiene** procedure if the
    header sets one. All must pass before any work.
-3. Remove the checkouts whose node is `DONE` or `DROPPED` (§5.5 step 4).
-4. Start each scheduled node (§5.2). `IN-PROGRESS` nodes continue at the
+3. Push the work branch and open its pull request if it has none, in §2
+   precedence. The pull request is where the work is kept; it is not a
+   request to merge before the graph is complete.
+4. Remove the checkouts whose node is `DONE` or `DROPPED` (§5.5 step 4).
+5. Start each scheduled node (§5.2). `IN-PROGRESS` nodes continue at the
    first unchecked step of their plan.
-5. Decide each stuck node: re-plan a `BLOCKED` node (§5.2 step 6); re-edge
+6. Decide each stuck node: re-plan a `BLOCKED` node (§5.2 step 6); re-edge
    or drop a node that depends on a `DROPPED` node. Write the contracts
    (format §4) and set the Capability of backlog rows awaiting one, so they
    can move into `graph.md` (`../work-graph/references/full-machinery.md`).
@@ -172,6 +198,7 @@ never edit it.
 
 1. **Plan.** If the node is `TODO`, plan it (§3) in the main checkout. Commit
    the plan and the state change to `PLANNED` together, on the work branch.
+   Push the work branch.
 2. **Start.** Before creating a checkout, check free disk against
    `disk-per-node` when the header sets it. Create the node's isolated
    checkout under the header's checkouts directory, on a branch named
@@ -248,7 +275,7 @@ authority.
    round, with the failure output.
 3. On pass: set the node `DONE` with the acceptance result in Refs, archive
    (§7), and commit the merge, the state change and the archive moves as one
-   commit.
+   commit. Push the work branch.
 4. Remove the node's checkout and its branch.
 
 No step changes version-control configuration from a node's checkout:
@@ -266,11 +293,12 @@ When every node is `DONE` or `DROPPED`:
    header's review focus. Confirmed findings become nodes and run through
    §5.2.
 3. When the stage passes, deliver the branch in §2 precedence: the
-   operator's instruction; else the project's delivery workflow; else open
-   one PR for the operator to review, carrying this stage's result and the
-   head it reviewed. A defect found in delivery becomes a node (§5.4);
-   delivery resumes when that node is `DONE`. Merge only when the operator
-   asks.
+   operator's instruction; else the project's delivery workflow; else bring
+   the work branch's pull request up to date, carrying this stage's result
+   and the head it reviewed, and make it mergeable: checks green, no
+   conflict. Fix a failed check yourself. A defect found in delivery
+   becomes a node (§5.4); delivery resumes when that node is `DONE`. Merge
+   only when the operator asks.
 
 ### 5.7 Branches
 
@@ -285,7 +313,8 @@ At every stop (a session ending, the graph complete), report:
 
 - the graph path and the work branch;
 - counts per state, and the nodes closed this session with their commits;
-- each stuck node and the decision it needs;
+- each stuck node and the decision the controller made for it;
+- the pull request link and the state of its checks;
 - every check that did not run, marked not run with its reason.
 
 Every claim cites a result from this session.
