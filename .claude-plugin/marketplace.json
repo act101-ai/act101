@@ -34,7 +34,6 @@
     {
       "name": "structured-dialog",
       "description": "Output style for low-cost operator/agent dialog: conclusion first, playback of what changed, visible author's calls, one question at a time with a default, causal order.",
-      "version": "0.1.0",
       "author": {
         "name": "Kage Martin",
         "url": "https://github.com/act101-ai"
