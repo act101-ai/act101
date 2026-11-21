@@ -1,6 +1,6 @@
 {
   "name": "act-lite",
-  "version": "1.2.7",
+  "version": "1.2.9",
   "description": "AST-aware code queries, code-health and dependency analysis for AI agents across 43 languages.",
   "skills": "./skills/",
   "mcpServers": "./.codex-plugin/mcp.json",
