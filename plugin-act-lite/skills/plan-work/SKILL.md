@@ -1,6 +1,6 @@
 ---
 name: plan-work
-description: Plans work as a resumable work graph of nodes with contracts, dependencies and fixed acceptance checks, cut from an approved design, reviewed, validated and committed for execution. Use when the operator asks to write a plan, plan a change, break work down or turn a spec into tasks before writing code ("write a plan", "plan this", "implementation plan", "break this down"), or to create or set up a work loop, work graph or tracker ("create a work loop for this spec", "set up a tracker", "make this resumable").
+description: Plans work as a resumable work graph of nodes with contracts, dependencies and fixed acceptance checks, cut from an approved design, validated, reviewed and delivered in a mergeable pull request. Use when the operator asks to write a plan, plan a change, break work down or turn a spec into tasks before writing code ("write a plan", "plan this", "implementation plan", "break this down"), or to create or set up a work loop, work graph or tracker ("create a work loop for this spec", "set up a tracker", "make this resumable").
 ---
 
 # Plan Work
@@ -15,8 +15,9 @@ description: Plans work as a resumable work graph of nodes with contracts, depen
 > - This skill's own rules are its defaults (§2) and carry no citation.
 
 This skill answers "how do we build this approved design". It ends with a
-committed, validated work graph. It does not run the graph: running,
-resuming and continuing a graph follow the project's execution workflow.
+validated work graph in a pull request that can merge. It does not run the
+graph: running, resuming and continuing a graph follow the project's
+execution workflow.
 
 A work loop is a **work graph**. Nodes are units of work. Edges are
 dependencies. Every node whose dependencies are all done can run, in
@@ -39,16 +40,66 @@ The graph's format is normative in
 templates `graph-template.md` and `node-template.md` and the ledger contract
 `ledgers.md` sit beside it.
 
+## Who owns what
+
+- **The operator defines the terms.** What the operator said, in this
+  conversation or in a project file, is decided. Do not ask it again, do
+  not ask the operator to confirm it, and do not redefine it. "Done" means
+  what the operator or the project says it means. Without such a
+  definition, done is: the work graph is committed, pushed, and in a pull
+  request that can merge, with its checks green and no conflict.
+- **The author owns the work.** The author is the session that holds the
+  conversation. When a subagent writes the text, its brief holds every
+  decision, and the session that wrote the brief is still the author. A
+  defect in the work is the author's failure. A review measures the
+  author; it does not move the responsibility, and it is not run again in
+  place of the author's own checks.
+- **Mechanics are the author's.** Structure, order, internal names, how to
+  test, and how to fix a finding are never questions for the operator.
+- **No stop loses work.** Commit and push each artifact when it is first
+  written and after each change, so that the session can end at any moment
+  without loss.
+- **No stop hands the work back.** Do not end a step by telling the
+  operator what to type to get the next step. Do the steps the request
+  includes, and stop at done.
+
+A graph that the validator rejects, or that the executor cannot run, is
+not a graph.
+
+### Questions
+
+A choice is a question for the operator only when all of these are true:
+
+1. The request, the conversation, the repo, a project rule and an approved
+   spec do not answer it.
+2. The answer changes what the product does for its user.
+3. A wrong guess is expensive to reverse.
+
+Every other choice is the author's call: decide it and record it.
+Mechanics never pass this test. A design does not ask for an exception to
+a project rule; it complies.
+
+Send the questions that pass in one message, each with your recommendation,
+so that one word answers it. If none pass, ask none. While a question is
+open, continue all work that does not depend on it, on your recommendation.
+
+Node order, graph structure, node size, and the fix for a review finding
+are mechanics.
+
 ## 1. Entry
 
 | Request | Action |
 |---|---|
-| Write a plan, plan this, break this down, turn this spec into tasks | Create the graph (§3). Then stop and ask the operator to review it (§6). |
-| Create a work loop, set up a graph or a tracker | Create the graph (§3). Then hand over (§6): the request includes running it. |
+| Write a plan, plan this, break this down, turn this spec into tasks; create a work loop, set up a graph or a tracker | Create the graph (§3), then deliver it (§6). |
 
 A graph lives in `docs/work/<program>/` unless the project has a
-convention. When a graph for the program already exists there, do not create
-a second one: say so and hand over (§6).
+convention.
+
+When a graph for the program already exists there, add the new work to
+that graph. One request gets one graph on one branch: work from several
+specs goes in the same graph, with an edge for each real dependency. Do
+not order work between two graphs: the format has no edge between graphs,
+and a node that waits on another graph cannot run.
 
 A small change gets a small graph. One node is a valid graph.
 
@@ -69,8 +120,8 @@ workflow for part of the work, use it.
    lifecycle requires.
 4. **Precedence.** An operator instruction, then a workflow the project
    declares, then this skill's defaults. If an adopted workflow conflicts
-   with a rule in this skill, ask the operator which applies and record the
-   answer with its citation.
+   with a default in this skill, the higher one in this order applies.
+   Record it in the header with its citation.
 
 ## 3. Create a graph
 
@@ -80,8 +131,8 @@ workflow for part of the work, use it.
    constraints are not settled, get an approved design before you cut nodes,
    in §2 precedence: the operator's instruction; else the project's design
    workflow; else agree intent, scope and constraints with the operator and
-   write them to a spec. Take what the repo and the conversation give. Ask
-   for the rest, one question at a time.
+   write them to a spec. Take what the repo and the conversation give.
+   Decide the rest by the test in Questions.
 2. **Map the files.** List the files the work creates or changes and what
    each is responsible for. Decide the decomposition here: one clear
    responsibility per file; files that change together live together; follow
@@ -96,7 +147,7 @@ workflow for part of the work, use it.
    not a real dependency removes parallelism.
 5. **Choose each node's capability** (§4).
 6. **Write the contracts** (format §4) and the header (format §2).
-7. **Self-review** the graph, and fix what you find in place:
+7. **Author's checks** on the graph. Fix what you find in place:
    1. **Spec coverage.** Every requirement in every authority spec maps to a
       node.
    2. **Interface match.** Every Consumes resolves to a Produces of a node
@@ -107,14 +158,23 @@ workflow for part of the work, use it.
    4. **Proportion.** A contract that describes the code instead of its
       interface has written the code. Replace bodies with signatures and
       acceptance checks.
-8. **Verification stage** (§5) on the header, the nodes and the edges.
-9. **Validate** the graph (format §7).
-10. **Commit** the graph files together, on a work branch. An operator
-    instruction about branches wins. Without one: on the default branch,
-    create a work branch before the first commit; on any other branch, keep
-    working in it. If the checkouts directory is not ignored by version
-    control, ignore it in the same commit, so a merge never stages a
-    checkout.
+   5. **Live code.** Open every file, symbol and signature a contract cites
+      and confirm each against the code as it is now.
+   6. **Runnable.** Every Acceptance is a command. Every id has the form the
+      validator accepts. Every node can become ready through edges inside
+      this graph.
+8. **Validate** the graph (format §7): run
+   `python3 <this skill's directory>/../work-graph/scripts/work_graph.py check <graph.md>`
+   and read its output. Exit status 0 is the only proof that the graph is
+   valid; a report that the graph is valid quotes this output. A session
+   that gave the planning to a subagent runs the command again itself.
+9. **Commit and push** the graph files together, on a work branch. An operator
+   instruction about branches wins. Without one: on the default branch,
+   create a work branch before the first commit; on any other branch, keep
+   working in it. If the checkouts directory is not ignored by version
+   control, ignore it in the same commit, so a merge never stages a
+   checkout.
+10. **One audit** (§5), then validate again (step 8), commit and push.
 
 ## 4. Capabilities
 
@@ -134,9 +194,9 @@ A capability names the class of task. A session maps it to the subagent or model
 
 Choose the subagent by its capability as the session describes it; do not set a model on the call when the session describes subagents.
 
-## 5. Verification stage
+## 5. One audit
 
-The stage has three steps:
+The audit has three steps:
 
 1. **Adversarial review.** The operator's or the project's declared reviewer
    if there is one; otherwise a fresh reviewer that has not seen this
@@ -163,22 +223,30 @@ The stage has three steps:
    refuted finding with its reason and drop it.
 3. **Remediate.** Fix every confirmed finding in the graph: a missing node, a
    wrong or missing edge, an unresolved Consumes, a contract that restates
-   the spec or writes the code. The stage passes when no confirmed finding
-   is open.
+   the spec or writes the code. The audit passes when no confirmed finding
+   is open. It does not run a second time. A finding goes to the operator
+   only when it passes the test in Questions; the fix for a finding is the
+   author's call. A finding that shows the graph cannot run, or several
+   findings of one kind, shows which of the author's checks (§3 step 7) was
+   skipped: do that check again over the whole graph.
 
 ## 6. Hand over
 
-If the request was to write a plan, give the operator the graph path and ask
-them to review it. Nothing runs before they answer.
+Open a pull request for the work branch, or update the one that exists,
+and make it mergeable: checks green, no conflict. Fix a failed check
+yourself. Give the operator the pull request link.
 
-Otherwise give the operator the graph path and the work branch. Execution
-follows the project's execution workflow, or the operator's instruction. To
-continue in any session: *"resume the work in `<graph path>`"*.
+When the request includes running the graph, go on to execution without
+asking: it follows the operator's instruction, else the project's
+execution workflow. Otherwise stop here; do not start execution, and do
+not tell the operator what to type to start it. Any session can continue
+the graph from its path.
 
 ## 7. Report
 
 At hand-over, report:
 
+- the pull request link and the state of its checks;
 - the graph path and the work branch;
 - the node count, the ready set, and the authority specs;
 - each choice made as the author's call, so the operator can check it;

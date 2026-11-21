@@ -22,7 +22,7 @@
     {
       "name": "act-lite",
       "description": "AST-aware code queries, code-health and dependency analysis for AI agents across 43 languages.",
-      "version": "1.2.7",
+      "version": "1.2.9",
       "author": {
         "name": "Kage Martin",
         "url": "https://github.com/act101-ai"
