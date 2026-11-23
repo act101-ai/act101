@@ -31,15 +31,17 @@ request.
      pushed, and leave the local default branch as it is.
    - **Uncommitted changes:** commit those that belong to the work, with the
      project's message convention. Leave the rest untouched: never stash,
-     reset or commit them, and never carry them to another branch. Tell the
-     operator when they could change a check's result.
+     reset or commit them, and never carry them to another branch. Name them
+     in the report when they could change a check's result.
    - **Base,** the first of these that exists: the base of the branch's open
      PR (a closed or merged PR does not count); the base the operator or the
      project declares (the plan, the graph header); the repository's default
-     branch. Never the branch's own upstream. When two of these differ, ask.
-     With no remote, the base is the commit the work started from; when that
-     is not known, ask. A base that is the same commit as the work compares
-     the work with itself: stop and ask.
+     branch. Never the branch's own upstream. When two of these differ, use
+     the first, and name the others in the PR body. With no remote, the base
+     is the commit the work started from; when that is not known, it is the
+     merge base with the local default branch, named in the report. A base
+     that is the same commit as the work leaves nothing to deliver: report
+     that, and stop.
    - **Requirements:** the design, spec, plan, issue or request the work
      answers. Step 3 reviews against them.
    - **A plan or work graph** with an open item is unfinished: say so and
@@ -49,8 +51,10 @@ request.
 
 2. **Verify the tree being delivered.**
    - Bring the branch up to date with its base by merging the base into it.
-     Merge, not rebase: rebasing pushed commits needs a force push. A
-     conflict you cannot resolve from the code goes to the operator.
+     Merge, not rebase: rebasing pushed commits needs a force push. Resolve
+     each conflict from the code, the requirements and the history of both
+     sides. A resolution that chooses between two behaviors is the author's
+     call: name it in the PR body.
    - Run every check CI runs for this diff. Read the CI configuration (the
      jobs a PR triggers, their path filters) and the project's verification
      rules. Include the PR-title and commit-message lints where the project
@@ -83,9 +87,13 @@ request.
 A capability names the class of task. A session maps it to the subagent or model it uses for that class of task — `judgment` for demanding or nuanced coding work, `implementation` for normal coding work, `mechanical` and `lookup` for simple work — and never to a newer or frontier model beyond that class. When the session's configuration assigns a model to a role (an implementer, a reviewer, a planner), that assignment wins over the capability.
 
 4. **Review feedback** from the operator or a PR reviewer. Read every item
-   first, and ask about each unclear item before changing anything: items
-   interact. Check each item against the code. An item that contradicts an
-   earlier decision of the operator goes to the operator. Then, in order:
+   first, before changing anything: items interact. Check each item against
+   the code. Take an unclear item in its most likely sense from the code
+   and the requirements, and state that sense in the answer to the item. An
+   item from the operator that changes an earlier decision of theirs is the
+   new decision. An item from another reviewer that contradicts a decision
+   of the operator is not applied: answer it with that decision and its
+   citation. Then, in order:
    fix each correct item test-first; run step 2's checks; push; answer each
    item where it was raised, with the pushed commit that fixed it, or, for
    a wrong item, the evidence (file:line, test output).
@@ -133,7 +141,8 @@ A capability names the class of task. A session maps it to the subagent or model
    - **Merge** only when authorized. First confirm the head being merged is
      the head that passed steps 2, 3 and 6. Show a failing check or an open
      finding to the operator and wait for their answer. Use the project's
-     merge method; when the project declares none, ask which.
+     merge method; when the project declares none, use the method that the
+     base branch's recent history shows, and name it in the report.
    - **Merge without a forge** into the local base branch. When the base has
      moved, merge it into the work branch first and run steps 2 and 3 again.
      When the base branch has commits that are not on the remote base, stop

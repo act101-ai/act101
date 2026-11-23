@@ -13,6 +13,7 @@ description: Runs a work graph to completion, schedules the ready nodes in paral
 > - To propose a rule, give the operator the rule, the failure it prevents with its evidence, what it costs (time, blocked work, maintenance) and what it gains. Write it only after the operator approves it, with its citation.
 > - Every rule in a graph carries its citation. A rule without one is deleted, not debated. Do not write a second rule to work around it.
 > - This skill's own rules are its defaults (§2) and carry no citation.
+> - This notice governs adding a rule. It is never a reason to stop and ask the operator about a design choice: the plan made the decisions, and a choice it left open is the author's call (Open choices).
 
 This skill runs an existing work graph to completion. It does not plan a
 graph and it does not deliver: a request to write a plan follows the
@@ -57,12 +58,48 @@ The graph's format is normative in
   place of the author's own checks.
 - **Mechanics are the author's.** Structure, order, internal names, how to
   test, and how to fix a finding are never questions for the operator.
+- **Execution asks the operator nothing.** Planning exists so that
+  execution never asks: the plan made the decisions, and each premise and
+  live-check outcome has its fallback in the node's contract. A run that
+  stops to ask the operator a question is a failed run.
 - **No stop loses work.** Commit and push each artifact when it is first
   written and after each change, so that the session can end at any moment
   without loss.
 - **No stop hands the work back.** Do not end a step by telling the
   operator what to type to get the next step. Do the steps the request
   includes, and stop at done.
+
+### Open choices
+
+A choice that the graph, the specs, the project and the operator's words
+leave open is the author's call. Take the recommended option: the one that
+best meets the spec with the least to reverse. Record it in the graph's Log
+as the author's call, with its reason, and in the spec's change log when it
+changes a spec (§5.4). Then continue. Do not wait for an answer, and do not
+end the session to get one.
+
+The operator is asked only for these:
+
+1. **Delivery.** The pull request is reported to the operator, and a merge
+   happens only when the operator asks for it (§5.6).
+2. **Outside the work branch.** A destructive or irreversible action outside
+   the work branch and its checkouts: for example a push to the default
+   branch, a force push, or the deletion of a branch, data or a resource
+   that the work did not create.
+
+Neither of these stops other work: the run continues every step that does
+not need the answer.
+
+An action the session cannot do (for example, hardware or access it does
+not have) is not a question either. Apply the fallback that the node's
+contract fixes for it (format §4), mark the check not run in the report
+(§6) with its reason, and continue. When the contract fixes no fallback,
+choose one as above.
+
+A live check (a check against a real service, device or account) is run by
+the executor, like every other check. It is never handed to the operator to
+run. Each outcome of a premise or a live check takes the fallback that the
+contract fixes; an outcome the contract does not cover is an open choice.
 
 ## 1. Entry
 
@@ -74,7 +111,8 @@ The graph's format is normative in
 To find the graph: an explicit path wins. Else a named program maps to
 `docs/work/<program>/graph.md`. Else look for `graph.md` under `docs/work/`
 and for `*-work-loop.md` anywhere in the repo. One match is the graph.
-Several matches: ask the operator which one. No match: there is nothing to
+Several matches: run the one that has open nodes and the newest Log entry,
+and name the others in the report (§6). No match: there is nothing to
 run; say so, and planning follows the project's planning workflow.
 
 A tracker in the older format (`*-work-loop.md`) is resumed by its own resume
@@ -99,6 +137,11 @@ written against what they actually produced. Never trust earlier summaries,
 plans or commit messages. If a premise has drifted, rewrite the spec section
 to match (§5.4), then plan; or set `DROPPED(<evidence>)` if the premise is
 gone.
+
+When the contract's **Premises:** line (format §4) fixes the action for the
+outcome found, take that action and record the outcome in the Log. An
+outcome that the contract does not cover is an open choice (Open choices).
+A premise that fails is never a question for the operator.
 
 ### 3.2 Write the plan
 
@@ -209,7 +252,9 @@ never edit it.
    ticking each checkbox and committing as the steps say.
 4. **Measure.** Run the node's Acceptance check alone as one command, with at
    most trailing `2>&1`; do not pipe it or chain it with a write. Run the
-   verification floor in the checkout. Read the output.
+   verification floor in the checkout. Read the output. The executor runs
+   every check itself, live checks included; a check it cannot run takes
+   the contract's fallback (Open choices).
 5. **Verification stage** (§4) on the node's diff, against its contract and
    plan.
 6. **Keep or discard.**
@@ -239,7 +284,7 @@ nuance and technicality.
 | `lookup` | Read-only work: find files, trace code, summarize, classify, extract; run a check and report its output. Changes no file. |
 | `mechanical` | Small edits the plan fully decides: copying, renaming, fixtures, docs that restate code. |
 | `implementation` | Ordinary implementation from a complete plan; node reviews. |
-| `judgment` | Design choices the plan leaves open; core or shared code; concurrency, security or data-loss risk; interfaces between nodes; a node in its second or later round; planning a node whose spec is ambiguous; the graph-level verification stages. |
+| `judgment` | Design choices the plan leaves to the implementer; core or shared code; concurrency, security or data-loss risk; interfaces between nodes; a node in its second or later round; planning a node whose spec is ambiguous; the graph-level verification stages. |
 
 A node that edits files is never `lookup`.
 
@@ -263,7 +308,8 @@ points to them. Add one line to the spec's `## Change log` (create it at the
 end if absent): the date, the section, who decided (the operator, or the
 author's call), and the reason. A section an agent rewrote is the author's
 call until the operator approves it, and is never a citation on its own
-authority.
+authority. The rewrite does not wait for that approval: record it and
+continue.
 
 ### 5.5 Keep: merge into the work branch
 
@@ -314,8 +360,10 @@ At every stop (a session ending, the graph complete), report:
 - the graph path and the work branch;
 - counts per state, and the nodes closed this session with their commits;
 - each stuck node and the decision the controller made for it;
+- each choice made as the author's call, with its Log entry;
 - the pull request link and the state of its checks;
-- every check that did not run, marked not run with its reason.
+- every check that did not run, marked not run with its reason and the
+  fallback that was applied.
 
 Every claim cites a result from this session.
 

@@ -119,6 +119,19 @@ Every node gets a contract at creation, in `nodes/<id>.md`:
   authority from the spec and the skill's defaults; for a node created from a
   found defect, from the spec text and change-log line that record the
   defect, which approve no rule.
+- **Premises:** optional. Each premise the node depends on that can fail at
+  execution (a dependency's result, an external service, a device, a live
+  check), with each outcome and the action the executor takes for it:
+  `<premise>: <outcome> → <action>; <outcome> → <action>`. When the
+  executor may be unable to run a check (hardware or access it does not
+  have), that is an outcome too, and its action is the fallback that
+  applies by default. Write `—`, or leave the line out, when the node has
+  none.
+- No field leaves a decision to the operator during execution. A contract
+  never says that the executor stops, asks or waits for the operator, that
+  the operator runs the node or a check, or that an outcome is a question
+  for the operator: the plan decides it, and what the plan leaves open the
+  executor decides and records as the author's call.
 - A name is the identifier before `(`, with its path: `config::load`,
   `Config.load`. A keyword in front of it (`fn`, `def`) is ignored; without
   `(`, the name is the leading identifier (`MAX: usize` declares `MAX`). A

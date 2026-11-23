@@ -1,8 +1,8 @@
 # Node template
 
 Copy the block below to `docs/work/<program>/nodes/<id>.md` at creation. Fill
-the contract; write `—` for Files, Consumes or Produces when there is nothing
-to list. The plan is written when the node starts.
+the contract; write `—` for Files, Consumes, Produces or Premises when there
+is nothing to list. The plan is written when the node starts.
 
 ```markdown
 # <id> — <what the node delivers>
@@ -12,6 +12,7 @@ to list. The plan is written when the node starts.
 **Consumes:** `<name>` (<id of the node that produces it>)
 **Produces:** `<name(params) -> return type>`
 **Acceptance:** `<check>` → <the result that means pass>
+**Premises:** <premise>: <outcome> → <action>; <outcome> → <action>
 
 ## Plan
 

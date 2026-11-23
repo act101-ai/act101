@@ -13,6 +13,7 @@ description: Plans work as a resumable work graph of nodes with contracts, depen
 > - To propose a rule, give the operator the rule, the failure it prevents with its evidence, what it costs (time, blocked work, maintenance) and what it gains. Write it only after the operator approves it, with its citation.
 > - Every rule in a graph carries its citation. A rule without one is deleted, not debated. Do not write a second rule to work around it.
 > - This skill's own rules are its defaults (§2) and carry no citation.
+> - This notice governs adding a rule. It is never a reason to stop and ask the operator about a design choice: a design choice is decided in planning (Questions), and one that execution meets is the executor's call.
 
 This skill answers "how do we build this approved design". It ends with a
 validated work graph in a pull request that can merge. It does not run the
@@ -56,6 +57,11 @@ templates `graph-template.md` and `node-template.md` and the ledger contract
   place of the author's own checks.
 - **Mechanics are the author's.** Structure, order, internal names, how to
   test, and how to fix a finding are never questions for the operator.
+- **A plan has no operator questions.** Planning exists so that execution
+  never asks. Every decision is made here, and each premise and live-check
+  outcome has its fallback in the node's contract. A graph that leaves a
+  choice to the operator during execution, or tells the executor to stop,
+  ask or wait for the operator, is a failed plan.
 - **No stop loses work.** Commit and push each artifact when it is first
   written and after each change, so that the session can end at any moment
   without loss.
@@ -82,6 +88,13 @@ a project rule; it complies.
 Send the questions that pass in one message, each with your recommendation,
 so that one word answers it. If none pass, ask none. While a question is
 open, continue all work that does not depend on it, on your recommendation.
+
+Questions are asked during planning only, before the graph is delivered
+(§6). When an answer has not come by the time the rest of the graph is
+done, write the graph on your recommendation, record the choice as the
+author's call, and list it in the report (§7); the operator can change it
+in the pull request before the graph runs. No question goes into the graph
+for the executor to ask.
 
 Node order, graph structure, node size, and the fix for a review finding
 are mechanics.
@@ -146,7 +159,17 @@ workflow for part of the work, use it.
    that node produces or changes a file that node creates. An edge that is
    not a real dependency removes parallelism.
 5. **Choose each node's capability** (§4).
-6. **Write the contracts** (format §4) and the header (format §2).
+6. **Write the contracts** (format §4) and the header (format §2). Decide
+   every choice the work needs now. For each premise a node depends on that
+   can fail at execution (a dependency's result, an external service, a
+   device, a live check), write each outcome and the action for it in the
+   node's **Premises:** line. A live check is the executor's to run. When
+   the executor may be unable to run it (hardware or access it does not
+   have), fix the fallback for that outcome too: it applies by default, the
+   check is reported as not run, and execution continues. No contract says
+   that the executor stops, asks or waits for the operator, that the
+   operator runs a node or a check, or that an outcome is a question for
+   the operator.
 7. **Author's checks** on the graph, and fix what you find in place:
    1. **Spec coverage.** Every requirement in every authority spec maps to a
       node.
@@ -163,6 +186,13 @@ workflow for part of the work, use it.
    6. **Runnable.** Every Acceptance is a command. Every id has the form the
       validator accepts. Every node can become ready through edges inside
       this graph.
+   7. **No operator questions.** No contract, plan text or header line
+      leaves a decision or a premise outcome to the operator during
+      execution. Every premise and live check has an action for each of its
+      outcomes in its node's **Premises:** line, including the outcome where
+      the executor cannot run it. No text tells the executor to stop, ask or
+      wait for the operator, or hands a node or a check to the operator. The
+      graph fails this check until each such place states the decision.
 8. **Validate** the graph (format §7): run
    `python3 <this skill's directory>/../work-graph/scripts/work_graph.py check <graph.md>`
    and read its output. Exit status 0 is the only proof that the graph is
@@ -186,7 +216,7 @@ and technicality:
 | `lookup` | Read-only work: find files, trace code, summarize, classify, extract; run a check and report its output. Changes no file. |
 | `mechanical` | Small edits the plan fully decides: copying, renaming, fixtures, docs that restate code. |
 | `implementation` | Ordinary implementation from a complete plan; node reviews. |
-| `judgment` | Design choices the plan leaves open; core or shared code; concurrency, security or data-loss risk; interfaces between nodes; a node in its second or later round; planning a node whose spec is ambiguous; the graph-level verification stages. |
+| `judgment` | Design choices the plan leaves to the implementer; core or shared code; concurrency, security or data-loss risk; interfaces between nodes; a node in its second or later round; planning a node whose spec is ambiguous; the graph-level verification stages. |
 
 A node that edits files is never `lookup`.
 

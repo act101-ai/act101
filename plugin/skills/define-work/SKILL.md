@@ -116,6 +116,9 @@ A workflow applies only when it is written down or the operator states it.
    - the files the change is expected to create or change, from the recon,
      with one line each on why
    - what is left to the builder
+   - each premise the design depends on that is not confirmed yet (an
+     external service, a device, a live check), with the action for each
+     outcome, so that neither planning nor execution has to ask
    - acceptance: what "done" means, as checks a test or a command can decide
 
    A small change's document is short: intent, the description, and

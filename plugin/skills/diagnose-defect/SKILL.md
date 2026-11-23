@@ -18,8 +18,8 @@ the operator states it.
 
 Never stash, reset or discard the operator's uncommitted files. A run at
 another commit never happens in the operator's checkout: it happens in a
-separate checkout at that commit, created only with the operator's consent
-and removed after (step 4).
+separate checkout at that commit, which this skill creates and removes
+after (step 4).
 
 When this skill runs inside a planned unit of work, a defect that blocks the
 unit is fixed in the unit, inside its files. A defect outside the unit's
@@ -34,8 +34,9 @@ files is reported for a new unit and not fixed here.
      the output.
    - **No test harness:** write a script whose exit status shows the defect
      (0 for correct, 1 for the defect), keep its output, and keep the script
-     with the fix where the project accepts it. Adding a test framework is a
-     new dependency: ask the operator first.
+     with the fix where the project accepts it. Do not add a test framework
+     here unless the plan or the operator's instruction includes it: it is
+     a new dependency, and the script proves the fix.
    - **Seen only in CI:** read the failing job's log, not a local run. List
      the differences between CI and this machine (license, HOME, OS,
      toolchain, environment variables, parallelism, services) before you
@@ -49,9 +50,10 @@ files is reported for a new unit and not fixed here.
    - **Performance:** a benchmark or timed command with a stated threshold,
      run several times, compared by median against the good state.
    - **Cannot reproduce:** do not fix by guessing. Add the observation the
-     next occurrence needs (logging, an assertion, a captured input) when
-     the operator agrees to keep it, report what you tried and what each
-     attempt showed, and stop.
+     next occurrence needs (logging, an assertion, a captured input) and
+     keep it; the report names it as the author's call. Report what you
+     tried and what each attempt showed, and end the diagnosis with that
+     report. It is a result, not a question for the operator.
 
 2. **Read the code path** end to end, from the symptom (the failing
    assertion, the stack frame, the wrong output) to the code that produced
@@ -70,8 +72,7 @@ files is reported for a new unit and not fixed here.
    between them.
    - **Where it runs.** Every run at another commit happens in a separate
      checkout, never in the operator's checkout, where your reproduction
-     test is uncommitted. Ask the operator first. It holds only your files;
-     remove it at the end.
+     test is uncommitted. It holds only your files; remove it at the end.
    - **The script** lives outside the repository and carries the
      reproduction itself, because the uncommitted test does not exist at old
      commits. It uses nothing newer than the good commit, leaves the
@@ -90,7 +91,7 @@ files is reported for a new unit and not fixed here.
    - Without a known-good commit, try an older release or tag with the
      script first. Skip this step and say why in the report when there is
      no known-good commit, no history, no script that meets the rules
-     above, the calibration fails, or the operator declines the checkout.
+     above, or the calibration fails.
 
 5. **Fix at the cause,** not the symptom. A retry, a sleep, a longer
    timeout, a caught and ignored error or a special case for the failing
@@ -121,13 +122,13 @@ files is reported for a new unit and not fixed here.
 
 7. **Three failed fixes** mean the model of the problem is wrong. Stop
    changing code. Re-read the evidence from step 1, list the assumptions
-   the three fixes shared, test the weakest of them, and tell the operator
-   what failed and what you now think. Then go back to step 3 with the
-   revised model.
+   the three fixes shared, test the weakest of them, and record in the
+   report what failed and what you now think. Then go back to step 3 with
+   the revised model, without waiting for an answer.
 
 8. **Report** (below). First remove every probe and temporary logging line
-   you added, whether or not anything is committed, except an observation
-   the operator agreed to keep (step 1).
+   you added, whether or not anything is committed, except the observation
+   that step 1 keeps.
 
 ## Report
 
